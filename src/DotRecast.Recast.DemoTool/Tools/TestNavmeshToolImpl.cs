@@ -45,7 +45,7 @@ namespace DotRecast.Recast.DemoTool.Tools
             var navMesh = _sample.GetNavMesh();
             var navQuery = _sample.GetNavMeshQuery();
 
-            navQuery.FindPath(startRef, endRef, startPt, endPt, filter, ref polys,
+            navQuery.FindPath(startRef, endRef, startPt, endPt, filter, polys,
                 new DtFindPathOption(enableRaycast ? DtNavMeshQuery.DT_FINDPATH_ANY_ANGLE : 0, float.MaxValue));
 
             if (0 >= polys.Count)
@@ -176,7 +176,7 @@ namespace DotRecast.Recast.DemoTool.Tools
         {
             var navQuery = _sample.GetNavMeshQuery();
 
-            navQuery.FindPath(startRef, endRef, startPt, endPt, filter, ref polys,
+            navQuery.FindPath(startRef, endRef, startPt, endPt, filter, polys,
                 new DtFindPathOption(enableRaycast ? DtNavMeshQuery.DT_FINDPATH_ANY_ANGLE : 0, float.MaxValue));
 
             if (0 >= polys.Count)
@@ -193,7 +193,7 @@ namespace DotRecast.Recast.DemoTool.Tools
                 }
             }
 
-            navQuery.FindStraightPath(startPt, epos, polys, ref straightPath, MAX_POLYS, straightPathOptions);
+            navQuery.FindStraightPath(startPt, epos, polys, straightPath, MAX_POLYS, straightPathOptions);
 
             return DtStatus.DT_SUCCSESS;
         }

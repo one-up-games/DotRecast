@@ -24,94 +24,98 @@ namespace DotRecast.Recast
 {
     public class RcConfig
     {
-        public readonly PartitionType partitionType;
+        public PartitionType partitionType;
 
-        public readonly bool useTiles;
+        public bool useTiles;
 
         /** The width/depth size of tile's on the xz-plane. [Limit: &gt;= 0] [Units: vx] **/
-        public readonly int tileSizeX;
+        public int tileSizeX;
 
-        public readonly int tileSizeZ;
+        public int tileSizeZ;
 
         /** The xz-plane cell size to use for fields. [Limit: &gt; 0] [Units: wu] **/
-        public readonly float cs;
+        public float cs;
 
         /** The y-axis cell size to use for fields. [Limit: &gt; 0] [Units: wu] **/
-        public readonly float ch;
+        public float ch;
 
         /** The maximum slope that is considered walkable. [Limits: 0 &lt;= value &lt; 90] [Units: Degrees] **/
-        public readonly float walkableSlopeAngle;
+        public float walkableSlopeAngle;
 
         /**
      * Minimum floor to 'ceiling' height that will still allow the floor area to be considered walkable. [Limit: &gt;= 3]
      * [Units: vx]
      **/
-        public readonly int walkableHeight;
+        public int walkableHeight;
 
         /** Maximum ledge height that is considered to still be traversable. [Limit: &gt;=0] [Units: vx] **/
-        public readonly int walkableClimb;
+        public int walkableClimb;
 
         /**
      * The distance to erode/shrink the walkable area of the heightfield away from obstructions. [Limit: &gt;=0] [Units:
      * vx]
      **/
-        public readonly int walkableRadius;
+        public int walkableRadius;
 
         /** The maximum allowed length for contour edges along the border of the mesh. [Limit: &gt;=0] [Units: vx] **/
-        public readonly int maxEdgeLen;
+        public int maxEdgeLen;
 
         /**
      * The maximum distance a simplfied contour's border edges should deviate the original raw contour. [Limit: &gt;=0]
      * [Units: vx]
      **/
-        public readonly float maxSimplificationError;
+        public float maxSimplificationError;
 
         /** The minimum number of cells allowed to form isolated island areas. [Limit: &gt;=0] [Units: vx] **/
-        public readonly int minRegionArea;
+        public int minRegionArea;
 
         /**
      * Any regions with a span count smaller than this value will, if possible, be merged with larger regions. [Limit:
      * &gt;=0] [Units: vx]
      **/
-        public readonly int mergeRegionArea;
+        public int mergeRegionArea;
 
         /**
      * The maximum number of vertices allowed for polygons generated during the contour to polygon conversion process.
      * [Limit: &gt;= 3]
      **/
-        public readonly int maxVertsPerPoly;
+        public int maxVertsPerPoly;
 
         /**
      * Sets the sampling distance to use when generating the detail mesh. (For height detail only.) [Limits: 0 or >=
      * 0.9] [Units: wu]
      **/
-        public readonly float detailSampleDist;
+        public float detailSampleDist;
 
         /**
      * The maximum distance the detail mesh surface should deviate from heightfield data. (For height detail only.)
      * [Limit: &gt;=0] [Units: wu]
      **/
-        public readonly float detailSampleMaxError;
+        public float detailSampleMaxError;
 
-        public readonly AreaModification walkableAreaMod;
-        public readonly bool filterLowHangingObstacles;
-        public readonly bool filterLedgeSpans;
-        public readonly bool filterWalkableLowHeightSpans;
+        public AreaModification walkableAreaMod;
+        public bool filterLowHangingObstacles;
+        public bool filterLedgeSpans;
+        public bool filterWalkableLowHeightSpans;
 
         /** Set to false to disable building detailed mesh **/
-        public readonly bool buildMeshDetail;
+        public bool buildMeshDetail;
 
         /** The size of the non-navigable border around the heightfield. [Limit: &gt;=0] [Units: vx] **/
-        public readonly int borderSize;
+        public int borderSize;
 
         /** Set of original settings passed in world units */
-        public readonly float minRegionAreaWorld;
+        public float minRegionAreaWorld;
 
-        public readonly float mergeRegionAreaWorld;
-        public readonly float walkableHeightWorld;
-        public readonly float walkableClimbWorld;
-        public readonly float walkableRadiusWorld;
-        public readonly float maxEdgeLenWorld;
+        public float mergeRegionAreaWorld;
+        public float walkableHeightWorld;
+        public float walkableClimbWorld;
+        public float walkableRadiusWorld;
+        public float maxEdgeLenWorld;
+
+        public RcConfig()
+        {
+        }
 
         /**
      * Non-tiled build configuration

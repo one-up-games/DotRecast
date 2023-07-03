@@ -763,7 +763,7 @@ namespace DotRecast.Detour
      *            The polygon filter to apply to the query.
      * @return Found path
      */
-        public DtStatus FindPath(long startRef, long endRef, RcVec3f startPos, RcVec3f endPos, IDtQueryFilter filter, ref List<long> path, DtFindPathOption fpo)
+        public DtStatus FindPath(long startRef, long endRef, RcVec3f startPos, RcVec3f endPos, IDtQueryFilter filter, List<long> path, DtFindPathOption fpo)
         {
             if (null == path)
                 return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
@@ -993,7 +993,7 @@ namespace DotRecast.Detour
                 }
             }
 
-            var status = GetPathToNode(lastBestNode, ref path);
+            var status = GetPathToNode(lastBestNode, path);
             if (lastBestNode.id != endRef)
             {
                 status |= DtStatus.DT_PARTIAL_RESULT;
@@ -1332,7 +1332,7 @@ namespace DotRecast.Detour
         /// @param[out] path An ordered list of polygon references representing the path. (Start to end.)
         /// [(polyRef) * @p pathCount]
         /// @returns The status flags for the query.
-        public virtual DtStatus FinalizeSlicedFindPath(ref List<long> path)
+        public virtual DtStatus FinalizeSlicedFindPath(List<long> path)
         {
             if (null == path)
                 return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
@@ -1359,7 +1359,7 @@ namespace DotRecast.Detour
                     m_query.status |= DtStatus.DT_PARTIAL_RESULT;
                 }
 
-                GetPathToNode(m_query.lastBestNode, ref path);
+                GetPathToNode(m_query.lastBestNode, path);
             }
 
             var details = m_query.status & DtStatus.DT_STATUS_DETAIL_MASK;
@@ -1377,7 +1377,7 @@ namespace DotRecast.Detour
         /// @param[out] path An ordered list of polygon references representing the path. (Start to end.)
         /// [(polyRef) * @p pathCount]
         /// @returns The status flags for the query.
-        public virtual DtStatus FinalizeSlicedFindPathPartial(List<long> existing, ref List<long> path)
+        public virtual DtStatus FinalizeSlicedFindPathPartial(List<long> existing, List<long> path)
         {
             if (null == path)
                 return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
@@ -1420,7 +1420,7 @@ namespace DotRecast.Detour
                     node = m_query.lastBestNode;
                 }
 
-                GetPathToNode(node, ref path);
+                GetPathToNode(node, path);
             }
 
             var details = m_query.status & DtStatus.DT_STATUS_DETAIL_MASK;
@@ -1431,7 +1431,7 @@ namespace DotRecast.Detour
             return DtStatus.DT_SUCCSESS | details;
         }
 
-        protected DtStatus AppendVertex(RcVec3f pos, int flags, long refs, ref List<StraightPathItem> straightPath,
+        protected DtStatus AppendVertex(RcVec3f pos, int flags, long refs, List<StraightPathItem> straightPath,
             int maxStraightPath)
         {
             if (straightPath.Count > 0 && DetourCommon.VEqual(straightPath[straightPath.Count - 1].pos, pos))
@@ -1459,7 +1459,7 @@ namespace DotRecast.Detour
         }
 
         protected DtStatus AppendPortals(int startIdx, int endIdx, RcVec3f endPos, List<long> path,
-            ref List<StraightPathItem> straightPath, int maxStraightPath, int options)
+            List<StraightPathItem> straightPath, int maxStraightPath, int options)
         {
             var startPos = straightPath[straightPath.Count - 1].pos;
             // Append or update last vertex
@@ -1500,7 +1500,7 @@ namespace DotRecast.Detour
                 if (DetourCommon.IntersectSegSeg2D(startPos, endPos, left, right, out var _, out var t))
                 {
                     var pt = RcVec3f.Lerp(left, right, t);
-                    stat = AppendVertex(pt, 0, path[i + 1], ref straightPath, maxStraightPath);
+                    stat = AppendVertex(pt, 0, path[i + 1], straightPath, maxStraightPath);
                     if (!stat.InProgress())
                     {
                         return stat;
@@ -1538,8 +1538,7 @@ namespace DotRecast.Detour
         ///  @param[in]		options				Query options. (see: #dtStraightPathOptions)
         /// @returns The status flags for the query.
         public virtual DtStatus FindStraightPath(RcVec3f startPos, RcVec3f endPos, List<long> path,
-            ref List<StraightPathItem> straightPath,
-            int maxStraightPath, int options)
+            List<StraightPathItem> straightPath, int maxStraightPath, int options)
         {
             if (!RcVec3f.IsFinite(startPos) || !RcVec3f.IsFinite(endPos) || null == straightPath
                 || null == path || 0 == path.Count || path[0] == 0 || maxStraightPath <= 0)
@@ -1563,7 +1562,7 @@ namespace DotRecast.Detour
             }
 
             // Add start point.
-            DtStatus stat = AppendVertex(closestStartPos, DT_STRAIGHTPATH_START, path[0], ref straightPath, maxStraightPath);
+            DtStatus stat = AppendVertex(closestStartPos, DT_STRAIGHTPATH_START, path[0], straightPath, maxStraightPath);
             if (!stat.InProgress())
             {
                 return stat;
@@ -1610,11 +1609,11 @@ namespace DotRecast.Detour
                             if ((options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS)) != 0)
                             {
                                 // Ignore status return value as we're just about to return anyway.
-                                AppendPortals(apexIndex, i, closestEndPos, path, ref straightPath, maxStraightPath, options);
+                                AppendPortals(apexIndex, i, closestEndPos, path, straightPath, maxStraightPath, options);
                             }
 
                             // Ignore status return value as we're just about to return anyway.
-                            AppendVertex(closestEndPos, 0, path[i], ref straightPath, maxStraightPath);
+                            AppendVertex(closestEndPos, 0, path[i], straightPath, maxStraightPath);
 
                             return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM | (straightPath.Count >= maxStraightPath ? DtStatus.DT_BUFFER_TOO_SMALL : DtStatus.DT_STATUS_NOTHING);
                         }
@@ -1652,7 +1651,7 @@ namespace DotRecast.Detour
                             // Append portals along the current straight path segment.
                             if ((options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS)) != 0)
                             {
-                                stat = AppendPortals(apexIndex, leftIndex, portalLeft, path, ref straightPath, maxStraightPath, options);
+                                stat = AppendPortals(apexIndex, leftIndex, portalLeft, path, straightPath, maxStraightPath, options);
                                 if (!stat.InProgress())
                                 {
                                     return stat;
@@ -1675,7 +1674,7 @@ namespace DotRecast.Detour
                             long refs = leftPolyRef;
 
                             // Append or update vertex
-                            stat = AppendVertex(portalApex, flags, refs, ref straightPath, maxStraightPath);
+                            stat = AppendVertex(portalApex, flags, refs, straightPath, maxStraightPath);
                             if (!stat.InProgress())
                             {
                                 return stat;
@@ -1708,7 +1707,7 @@ namespace DotRecast.Detour
                             // Append portals along the current straight path segment.
                             if ((options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS)) != 0)
                             {
-                                stat = AppendPortals(apexIndex, rightIndex, portalRight, path, ref straightPath, maxStraightPath, options);
+                                stat = AppendPortals(apexIndex, rightIndex, portalRight, path, straightPath, maxStraightPath, options);
                                 if (!stat.InProgress())
                                 {
                                     return stat;
@@ -1731,7 +1730,7 @@ namespace DotRecast.Detour
                             long refs = rightPolyRef;
 
                             // Append or update vertex
-                            stat = AppendVertex(portalApex, flags, refs, ref straightPath, maxStraightPath);
+                            stat = AppendVertex(portalApex, flags, refs, straightPath, maxStraightPath);
                             if (!stat.InProgress())
                             {
                                 return stat;
@@ -1753,7 +1752,7 @@ namespace DotRecast.Detour
                 // Append portals along the current straight path segment.
                 if ((options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS)) != 0)
                 {
-                    stat = AppendPortals(apexIndex, path.Count - 1, closestEndPos, path, ref straightPath, maxStraightPath, options);
+                    stat = AppendPortals(apexIndex, path.Count - 1, closestEndPos, path, straightPath, maxStraightPath, options);
                     if (!stat.InProgress())
                     {
                         return stat;
@@ -1762,7 +1761,7 @@ namespace DotRecast.Detour
             }
 
             // Ignore status return value as we're just about to return anyway.
-            AppendVertex(closestEndPos, DT_STRAIGHTPATH_END, 0, ref straightPath, maxStraightPath);
+            AppendVertex(closestEndPos, DT_STRAIGHTPATH_END, 0, straightPath, maxStraightPath);
             return DtStatus.DT_SUCCSESS | (straightPath.Count >= maxStraightPath ? DtStatus.DT_BUFFER_TOO_SMALL : DtStatus.DT_STATUS_NOTHING);
         }
 
@@ -2621,7 +2620,7 @@ namespace DotRecast.Detour
         ///  @param[in]		maxResult		The maximum number of polygons the result arrays can hold.
         /// @returns The status flags for the query.
         public DtStatus FindPolysAroundShape(long startRef, RcVec3f[] verts, IDtQueryFilter filter,
-            ref List<long> resultRef, ref List<long> resultParent, ref List<float> resultCost)
+            List<long> resultRef, List<long> resultParent, List<float> resultCost)
         {
             resultRef.Clear();
             resultParent.Clear();
@@ -2799,8 +2798,7 @@ namespace DotRecast.Detour
         ///  @param[out]	resultParent	The reference ids of the parent polygons for each result. 
         /// @returns The status flags for the query.
         public DtStatus FindLocalNeighbourhood(long startRef, RcVec3f centerPos, float radius,
-            IDtQueryFilter filter,
-            ref List<long> resultRef, ref List<long> resultParent)
+            IDtQueryFilter filter, List<long> resultRef, List<long> resultParent)
         {
             // Validate input
             if (!m_nav.IsValidPolyRef(startRef) || !RcVec3f.IsFinite(centerPos) || radius < 0
@@ -2993,7 +2991,7 @@ namespace DotRecast.Detour
         /// @param[in] maxSegments The maximum number of segments the result arrays can hold.
         /// @returns The status flags for the query.
         public DtStatus GetPolyWallSegments(long refs, bool storePortals, IDtQueryFilter filter,
-            ref List<SegmentVert> segmentVerts, ref List<long> segmentRefs)
+            List<SegmentVert> segmentVerts, List<long> segmentRefs)
         {
             segmentVerts.Clear();
             segmentRefs.Clear();
@@ -3126,8 +3124,7 @@ namespace DotRecast.Detour
         ///  								source point. [(x, y, z)]
         /// @returns The status flags for the query.
         public virtual DtStatus FindDistanceToWall(long startRef, RcVec3f centerPos, float maxRadius,
-            IDtQueryFilter filter,
-            out float hitDist, out RcVec3f hitPos, out RcVec3f hitNormal)
+            IDtQueryFilter filter, out float hitDist, out RcVec3f hitPos, out RcVec3f hitNormal)
         {
             hitDist = 0;
             hitPos = RcVec3f.Zero;
@@ -3368,7 +3365,7 @@ namespace DotRecast.Detour
      * @remarks The result of this function depends on the state of the query object. For that reason it should only be
      *          used immediately after one of the two Dijkstra searches, findPolysAroundCircle or findPolysAroundShape.
      */
-        public DtStatus GetPathFromDijkstraSearch(long endRef, ref List<long> path)
+        public DtStatus GetPathFromDijkstraSearch(long endRef, List<long> path)
         {
             if (!m_nav.IsValidPolyRef(endRef) || null == path)
             {
@@ -3389,11 +3386,11 @@ namespace DotRecast.Detour
                 return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
             }
 
-            return GetPathToNode(endNode, ref path);
+            return GetPathToNode(endNode, path);
         }
 
         // Gets the path leading to the specified end node.
-        protected DtStatus GetPathToNode(DtNode endNode, ref List<long> path)
+        protected DtStatus GetPathToNode(DtNode endNode, List<long> path)
         {
             // Reverse the path.
             DtNode curNode = endNode;

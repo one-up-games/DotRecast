@@ -101,7 +101,7 @@ namespace DotRecast.Detour.Crowd
             m_center = pos;
 
             // First query non-overlapping polygons.
-            var status = navquery.FindLocalNeighbourhood(startRef, pos, collisionQueryRange, filter, ref m_polys, ref m_parents);
+            var status = navquery.FindLocalNeighbourhood(startRef, pos, collisionQueryRange, filter, m_polys, m_parents);
             if (status.Succeeded())
             {
                 // Secondly, store all polygon edges.
@@ -112,7 +112,7 @@ namespace DotRecast.Detour.Crowd
                 
                 for (int j = 0; j < m_polys.Count; ++j)
                 {
-                    var result = navquery.GetPolyWallSegments(m_polys[j], false, filter, ref segmentVerts, ref segmentRefs);
+                    var result = navquery.GetPolyWallSegments(m_polys[j], false, filter, segmentVerts, segmentRefs);
                     if (result.Succeeded())
                     {
                         for (int k = 0; k < segmentRefs.Count; ++k)

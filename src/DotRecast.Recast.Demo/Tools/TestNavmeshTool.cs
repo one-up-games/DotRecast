@@ -317,7 +317,7 @@ public class TestNavmeshTool : IRcTool
                 var parentRefs = new List<long>();
                 var costs = new List<float>();
 
-                var status = m_navQuery.FindPolysAroundShape(m_startRef, m_queryPoly, m_filter, ref refs, ref parentRefs, ref costs);
+                var status = m_navQuery.FindPolysAroundShape(m_startRef, m_queryPoly, m_filter, refs, parentRefs, costs);
                 if (status.Succeeded())
                 {
                     m_polys = refs;
@@ -330,7 +330,7 @@ public class TestNavmeshTool : IRcTool
             if (m_sposSet && m_startRef != 0)
             {
                 m_neighbourhoodRadius = _impl.GetSample().GetSettings().agentRadius * 20.0f;
-                m_navQuery.FindLocalNeighbourhood(m_startRef, m_spos, m_neighbourhoodRadius, m_filter, ref m_polys, ref m_parent);
+                m_navQuery.FindLocalNeighbourhood(m_startRef, m_spos, m_neighbourhoodRadius, m_filter, m_polys, m_parent);
             }
         }
         else if (option.mode == TestNavmeshToolMode.RANDOM_POINTS_IN_CIRCLE)
@@ -697,7 +697,7 @@ public class TestNavmeshTool : IRcTool
                     {
                         var result = _impl.GetSample()
                             .GetNavMeshQuery()
-                            .GetPolyWallSegments(m_polys[i], false, m_filter, ref segmentVerts, ref segmentRefs);
+                            .GetPolyWallSegments(m_polys[i], false, m_filter, segmentVerts, segmentRefs);
 
                         if (result.Succeeded())
                         {
@@ -843,7 +843,7 @@ public class TestNavmeshTool : IRcTool
 
             if (m_pathFindStatus.Succeeded())
             {
-                m_navQuery.FinalizeSlicedFindPath(ref m_polys);
+                m_navQuery.FinalizeSlicedFindPath(m_polys);
                 m_straightPath = null;
                 if (m_polys != null)
                 {
@@ -859,7 +859,7 @@ public class TestNavmeshTool : IRcTool
                         }
                     }
 
-                    m_navQuery.FindStraightPath(m_spos, epos, m_polys, ref m_straightPath, MAX_POLYS, DtNavMeshQuery.DT_STRAIGHTPATH_ALL_CROSSINGS);
+                    m_navQuery.FindStraightPath(m_spos, epos, m_polys, m_straightPath, MAX_POLYS, DtNavMeshQuery.DT_STRAIGHTPATH_ALL_CROSSINGS);
                 }
 
                 m_pathFindStatus = DtStatus.DT_FAILURE;

@@ -592,12 +592,12 @@ namespace DotRecast.Detour.Crowd
                     if (ag.targetReplan) // && npath > 10)
                     {
                         // Try to use existing steady path during replan if possible.
-                        status = _navQuery.FinalizeSlicedFindPathPartial(path, ref reqPath);
+                        status = _navQuery.FinalizeSlicedFindPathPartial(path, reqPath);
                     }
                     else
                     {
                         // Try to move towards target when goal changes.
-                        status = _navQuery.FinalizeSlicedFindPath(ref reqPath);
+                        status = _navQuery.FinalizeSlicedFindPath(reqPath);
                     }
 
                     RcVec3f reqPos = new RcVec3f();

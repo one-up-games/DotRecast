@@ -17,6 +17,7 @@ freely, subject to the following restrictions:
 */
 
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace DotRecast.Core
@@ -215,7 +216,7 @@ namespace DotRecast.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Normalize()
         {
-            float d = (float)(1.0f / Math.Sqrt(RcMath.Sqr(x) + RcMath.Sqr(y) + RcMath.Sqr(z)));
+            float d = (float)(1.0f / MathF.Sqrt(RcMath.Sqr(x) + RcMath.Sqr(y) + RcMath.Sqr(z)));
             if (d != 0)
             {
                 x *= d;
@@ -338,7 +339,7 @@ namespace DotRecast.Core
             float dx = v2.x - v1.x;
             float dy = v2.y - v1.y;
             float dz = v2.z - v1.z;
-            return (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+            return MathF.Sqrt(dx * dx + dy * dy + dz * dz);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -452,7 +453,7 @@ namespace DotRecast.Core
         {
             float dx = v2[0] - v1[0];
             float dz = v2[2] - v1[2];
-            return (float)Math.Sqrt(dx * dx + dz * dz);
+            return MathF.Sqrt(dx * dx + dz * dz);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -460,7 +461,7 @@ namespace DotRecast.Core
         {
             float dx = v2.x - v1.x;
             float dz = v2.z - v1.z;
-            return (float)Math.Sqrt(dx * dx + dz * dz);
+            return MathF.Sqrt(dx * dx + dz * dz);
         }
 
 
@@ -604,7 +605,7 @@ namespace DotRecast.Core
 
         public static void Normalize(float[] v)
         {
-            float d = (float)(1.0f / Math.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]));
+            float d = 1.0f / MathF.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
             v[0] *= d;
             v[1] *= d;
             v[2] *= d;
@@ -612,10 +613,22 @@ namespace DotRecast.Core
 
         public static void Normalize(ref RcVec3f v)
         {
-            float d = (float)(1.0f / Math.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
+            float d = 1.0f / MathF.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
             v.x *= d;
             v.y *= d;
             v.z *= d;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator Vector3(RcVec3f vec3F)
+        {
+            return Unsafe.As<RcVec3f, Vector3>(ref vec3F);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator RcVec3f(Vector3 vec3)
+        {
+            return Unsafe.As<Vector3, RcVec3f>(ref vec3);
         }
     }
 }

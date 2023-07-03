@@ -34,7 +34,7 @@ namespace DotRecast.Detour
         {
             // Find steer target.
             var straightPath = new List<StraightPathItem>();
-            var result = navQuery.FindStraightPath(startPos, endPos, path, ref straightPath, MAX_STEER_POINTS, 0);
+            var result = navQuery.FindStraightPath(startPos, endPos, path, straightPath, MAX_STEER_POINTS, 0);
             if (result.Failed())
             {
                 return null;
