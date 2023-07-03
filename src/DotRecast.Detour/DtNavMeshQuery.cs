@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using DotRecast.Core;
 
 namespace DotRecast.Detour
@@ -723,7 +722,7 @@ namespace DotRecast.Detour
         {
             if (!RcVec3f.IsFinite(center) || !RcVec3f.IsFinite(halfExtents))
             {
-                return ImmutableArray<DtMeshTile>.Empty;
+                return Array.Empty<DtMeshTile>();
             }
 
             RcVec3f bmin = center.Subtract(halfExtents);

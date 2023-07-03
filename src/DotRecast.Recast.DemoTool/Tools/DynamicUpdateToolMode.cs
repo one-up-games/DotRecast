@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace DotRecast.Recast.DemoTool.Tools
+﻿namespace DotRecast.Recast.DemoTool.Tools
 {
     public class DynamicUpdateToolMode
     {
@@ -8,9 +6,10 @@ namespace DotRecast.Recast.DemoTool.Tools
         public static readonly DynamicUpdateToolMode COLLIDERS = new DynamicUpdateToolMode(1, "Colliders");
         public static readonly DynamicUpdateToolMode RAYCAST = new DynamicUpdateToolMode(2, "Raycast");
 
-        public static readonly ImmutableArray<DynamicUpdateToolMode> Values = ImmutableArray.Create(
+        public static readonly DynamicUpdateToolMode[] Values = 
+        {
             BUILD, COLLIDERS, RAYCAST
-        );
+        };
 
         public int Idx { get; }
         public string Label { get; }

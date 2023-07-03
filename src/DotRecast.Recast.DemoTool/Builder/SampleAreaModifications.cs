@@ -18,12 +18,10 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using System.Collections.Immutable;
 using System.Linq;
 
 namespace DotRecast.Recast.DemoTool.Builder
 {
-
     public class SampleAreaModifications
     {
         public const int SAMPLE_POLYAREA_TYPE_GROUND = 0x0;
@@ -43,7 +41,8 @@ namespace DotRecast.Recast.DemoTool.Builder
         public static readonly AreaModification SAMPLE_AREAMOD_DOOR = new AreaModification(SAMPLE_POLYAREA_TYPE_DOOR);
         public static readonly AreaModification SAMPLE_AREAMOD_JUMP = new AreaModification(SAMPLE_POLYAREA_TYPE_JUMP);
 
-        public static readonly ImmutableArray<AreaModification> Values = ImmutableArray.Create(
+        public static readonly AreaModification[] Values = 
+        {
             SAMPLE_AREAMOD_WALKABLE,
             SAMPLE_AREAMOD_GROUND,
             SAMPLE_AREAMOD_WATER,
@@ -51,7 +50,7 @@ namespace DotRecast.Recast.DemoTool.Builder
             SAMPLE_AREAMOD_GRASS,
             SAMPLE_AREAMOD_DOOR,
             SAMPLE_AREAMOD_JUMP
-        );
+        };
 
         public static AreaModification OfValue(int value)
         {

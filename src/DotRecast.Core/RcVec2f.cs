@@ -62,15 +62,15 @@ namespace DotRecast.Core
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator Vector2(RcVec2f vec3F)
+        public static unsafe implicit operator Vector2(RcVec2f vec3F)
         {
-            return Unsafe.As<RcVec2f, Vector2>(ref vec3F);
+            return *((Vector2*)&vec3F);
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator RcVec2f(Vector2 vec3)
+        public static unsafe implicit operator RcVec2f(Vector2 vec3)
         {
-            return Unsafe.As<Vector2, RcVec2f>(ref vec3);
+            return *((RcVec2f*)&vec3);
         }
     }
 }

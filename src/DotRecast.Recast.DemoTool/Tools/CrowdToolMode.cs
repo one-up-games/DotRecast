@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace DotRecast.Recast.DemoTool.Tools
+﻿namespace DotRecast.Recast.DemoTool.Tools
 {
     public class CrowdToolMode
     {
@@ -10,13 +8,14 @@ namespace DotRecast.Recast.DemoTool.Tools
         public static readonly CrowdToolMode TOGGLE_POLYS = new CrowdToolMode(3, "Toggle Polys");
         public static readonly CrowdToolMode PROFILING = new CrowdToolMode(4, "Profiling");
 
-        public static readonly ImmutableArray<CrowdToolMode> Values = ImmutableArray.Create(
+        public static readonly CrowdToolMode[] Values =
+        {
             CREATE,
             MOVE_TARGET,
             SELECT,
             TOGGLE_POLYS,
             PROFILING
-        );
+        };
 
         public int Idx { get; }
         public string Label { get; }

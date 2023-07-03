@@ -63,7 +63,6 @@ namespace DotRecast.Core
             z = f;
         }
 
-
         public RcVec3f(float[] f)
         {
             x = f[0];
@@ -127,7 +126,6 @@ namespace DotRecast.Core
             y = @in[i + 1];
             z = @in[i + 2];
         }
-
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly float Length()
@@ -620,15 +618,15 @@ namespace DotRecast.Core
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator Vector3(RcVec3f vec3F)
+        public static unsafe implicit operator Vector3(RcVec3f vec3f)
         {
-            return Unsafe.As<RcVec3f, Vector3>(ref vec3F);
+            return *(Vector3*)&vec3f;
         }
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator RcVec3f(Vector3 vec3)
+        public static unsafe implicit operator RcVec3f(Vector3 vec3)
         {
-            return Unsafe.As<Vector3, RcVec3f>(ref vec3);
+            return *(RcVec3f*)&vec3;
         }
     }
 }

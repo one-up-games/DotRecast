@@ -20,7 +20,6 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -324,7 +323,7 @@ public class RecastDemo : IRecastDemoChannel
 
             if (null != mesh)
             {
-                _sample.Update(_sample.GetInputGeom(), ImmutableArray<RecastBuilderResult>.Empty, mesh);
+                _sample.Update(_sample.GetInputGeom(), Array.Empty<RecastBuilderResult>(), mesh);
                 toolset.SetEnabled(true);
             }
         }
@@ -375,7 +374,7 @@ public class RecastDemo : IRecastDemoChannel
         _imgui = new ImGuiController(_gl, window, _input, imGuiFontConfig);
 
         DemoInputGeomProvider geom = LoadInputMesh("nav_test.obj");
-        _sample = new Sample(geom, ImmutableArray<RecastBuilderResult>.Empty, null);
+        _sample = new Sample(geom, Array.Empty<RecastBuilderResult>(), null);
 
         settingsView = new RcSettingsView(this);
         settingsView.SetSample(_sample);
@@ -652,7 +651,7 @@ public class RecastDemo : IRecastDemoChannel
     {
         var geom = LoadInputMesh(args.FilePath);
 
-        _sample.Update(geom, ImmutableArray<RecastBuilderResult>.Empty, null);
+        _sample.Update(geom, Array.Empty<RecastBuilderResult>(), null);
     }
 
     private void OnNavMeshBuildBegan(NavMeshBuildBeganEvent args)
@@ -748,7 +747,7 @@ public class RecastDemo : IRecastDemoChannel
             .Select(x => x.GetTelemetry())
             .SelectMany(x => x.ToList())
             .GroupBy(x => x.Key)
-            .ToImmutableSortedDictionary(x => x.Key, x => x.Sum(y => y.Millis));
+            .ToDictionary(x => x.Key, x => x.Sum(y => y.Millis));
 
         foreach (var (key, millis) in telemetries)
         {

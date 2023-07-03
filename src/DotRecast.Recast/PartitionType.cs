@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Linq;
+﻿using System.Linq;
 
 namespace DotRecast.Recast
 {
@@ -11,7 +10,7 @@ namespace DotRecast.Recast
         public static readonly PartitionType MONOTONE = new PartitionType(1, nameof(MONOTONE));
         public static readonly PartitionType LAYERS = new PartitionType(2, nameof(LAYERS));
 
-        public static readonly ImmutableArray<PartitionType> Values = ImmutableArray.Create(WATERSHED, MONOTONE, LAYERS);
+        public static readonly PartitionType[] Values = { WATERSHED, MONOTONE, LAYERS };
 
         public int Idx { get; }
         public string Name { get; }

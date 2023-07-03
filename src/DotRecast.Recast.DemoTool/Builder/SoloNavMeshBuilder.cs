@@ -16,9 +16,6 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using DotRecast.Detour;
 using DotRecast.Recast.DemoTool.Geom;
 
@@ -39,7 +36,7 @@ namespace DotRecast.Recast.DemoTool.Builder
 
             var meshData = BuildMeshData(geom, cellSize, cellHeight, agentHeight, agentRadius, agentMaxClimb, rcResult);
             var navMesh = BuildNavMesh(meshData, vertsPerPoly);
-            return new NavMeshBuildResult(ImmutableArray.Create(rcResult), navMesh);
+            return new NavMeshBuildResult( new [] {rcResult}, navMesh);
         }
 
         private DtNavMesh BuildNavMesh(DtMeshData meshData, int vertsPerPoly)
