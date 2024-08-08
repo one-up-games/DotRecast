@@ -26,7 +26,7 @@ namespace DotRecast.Detour
 {
     using static RcMath;
 
-    public class DtNavMesh
+    public unsafe class DtNavMesh
     {
         public const int DT_SALT_BITS = 16;
         public const int DT_TILE_BITS = 28;
@@ -1228,11 +1228,18 @@ namespace DotRecast.Detour
 
             int ip = poly.index;
 
-            float[] verts = new float[m_maxVertPerPoly * 3];
+            Span<float> verts = stackalloc float[m_maxVertPerPoly * 3];
             int nv = poly.vertCount;
+
+            
             for (int i = 0; i < nv; ++i)
             {
-                Array.Copy(tile.data.verts, poly.verts[i] * 3, verts, i * 3, 3);
+                var sourceArray = tile.data.verts;
+                var sourceIndex = poly.verts[i] * 3;
+                var length = 3;
+                var destIndex = i * 3;
+                var sourceSpan = new Span<float>(sourceArray,  sourceIndex, length);
+                sourceSpan.CopyTo(verts.Slice(destIndex, length));
             }
 
             if (!DetourCommon.PointInPolygon(pos, verts, nv))

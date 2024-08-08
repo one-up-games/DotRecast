@@ -39,7 +39,7 @@ namespace DotRecast.Core
             return Of(f, 0);
         }
 
-        public static RcVec3f Of(float[] f, int idx)
+        public static RcVec3f Of(Span<float> f, int idx)
         {
             return Of(f[idx + 0], f[idx + 1], f[idx + 2]);
         }
@@ -389,7 +389,7 @@ namespace DotRecast.Core
         /// @param[in] v2 The destination vector.
         /// @param[in] t The interpolation factor. [Limits: 0 <= value <= 1.0]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static RcVec3f Lerp(float[] verts, int v1, int v2, float t)
+        public static RcVec3f Lerp(Span<float> verts, int v1, int v2, float t)
         {
             return new RcVec3f(
                 verts[v1 + 0] + (verts[v2 + 0] - verts[v1 + 0]) * t,

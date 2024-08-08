@@ -19,13 +19,15 @@ freely, subject to the following restrictions:
 */
 
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace DotRecast.Detour
 {
     public class DtNodePool
     {
-        private readonly Dictionary<long, List<DtNode>> m_map = new Dictionary<long, List<DtNode>>();
+        private readonly Dictionary<long, DtNode> m_map = new Dictionary<long, DtNode>();
         private readonly List<DtNode> m_nodes = new List<DtNode>();
+        private readonly Stack<DtNode> _nodesRealPool = new Stack<DtNode>();
 
         public DtNodePool()
         {
@@ -33,87 +35,89 @@ namespace DotRecast.Detour
 
         public void Clear()
         {
+            foreach (var dtNode in m_nodes)
+            {
+                dtNode.cost = 0;
+                dtNode.pidx = 0;
+                _nodesRealPool.Push(dtNode);
+            }
+            
             m_nodes.Clear();
             m_map.Clear();
         }
+        
 
-        public List<DtNode> FindNodes(long id)
-        {
-            var hasNode = m_map.TryGetValue(id, out var nodes);
-            ;
-            if (nodes == null)
-            {
-                nodes = new List<DtNode>();
-            }
-
-            return nodes;
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DtNode FindNode(long id)
         {
-            var hasNode = m_map.TryGetValue(id, out var nodes);
+            var hasNode = m_map.TryGetValue(id, out var node);
             ;
-            if (nodes != null && 0 != nodes.Count)
+            if (hasNode)
             {
-                return nodes[0];
+                return node;
             }
 
             return null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DtNode GetNode(long id, int state)
         {
-            var hasNode = m_map.TryGetValue(id, out var nodes);
-            if (nodes != null)
+            var hasNode = m_map.TryGetValue(id, out var node);
+            if (hasNode)
             {
-                foreach (DtNode node in nodes)
+                if (node.state == state)
                 {
-                    if (node.state == state)
-                    {
-                        return node;
-                    }
+                    return node;
                 }
             }
 
             return Create(id, state);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected DtNode Create(long id, int state)
         {
+            if (_nodesRealPool.TryPop(out var newNode))
+            {
+                newNode.index = m_nodes.Count + 1;
+                newNode.id = id;
+                newNode.state = state;
+                newNode.pos = default;
+                newNode.cost = default;
+                newNode.total = default;
+                newNode.pidx = default;
+                newNode.flags = default;
+                
+                m_nodes.Add(newNode);
+                m_map.Add(id, newNode);
+                return newNode;
+            }
+
             DtNode node = new DtNode(m_nodes.Count + 1);
             node.id = id;
             node.state = state;
             m_nodes.Add(node);
-            var hasNode = m_map.TryGetValue(id, out var nodes);
-            ;
-            if (nodes == null)
-            {
-                nodes = new List<DtNode>();
-                m_map.Add(id, nodes);
-            }
-
-            nodes.Add(node);
+            m_map.Add(id, node);
             return node;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetNodeIdx(DtNode node)
         {
             return node != null ? node.index : 0;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DtNode GetNodeAtIdx(int idx)
         {
             return idx != 0 ? m_nodes[idx - 1] : null;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DtNode GetNode(long refs)
         {
             return GetNode(refs, 0);
-        }
-
-        public Dictionary<long, List<DtNode>> GetNodeMap()
-        {
-            return m_map;
         }
     }
 }

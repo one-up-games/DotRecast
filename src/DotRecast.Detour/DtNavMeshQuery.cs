@@ -27,7 +27,7 @@ namespace DotRecast.Detour
     using static RcMath;
     using static DtNode;
 
-    public class DtNavMeshQuery
+    public unsafe class DtNavMeshQuery
     {
         /**
      * Use raycasts during pathfind to "shortcut" (raycast still consider costs) Options for
@@ -61,6 +61,8 @@ namespace DotRecast.Detour
         protected readonly DtNodePool m_nodePool;
         protected readonly DtNodeQueue m_openList;
         protected DtQueryData m_query;
+        private DtNodePool _tinyNodePool;
+        private LinkedList<DtNode> _stack = new LinkedList<DtNode>();
 
         /// < Sliced query state.
         public DtNavMeshQuery(DtNavMesh nav)
@@ -1796,10 +1798,9 @@ namespace DotRecast.Detour
         /// @returns The status flags for the query.
         public DtStatus MoveAlongSurface(long startRef, RcVec3f startPos, RcVec3f endPos,
             IDtQueryFilter filter,
-            out RcVec3f resultPos, out List<long> visited)
+            out RcVec3f resultPos, ref List<long> visited)
         {
             resultPos = RcVec3f.Zero;
-            visited = new List<long>();
 
             // Validate input
             if (!m_nav.IsValidPolyRef(startRef) || !RcVec3f.IsFinite(startPos)
@@ -1808,16 +1809,19 @@ namespace DotRecast.Detour
                 return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
             }
 
-            DtNodePool tinyNodePool = new DtNodePool();
+            if (_tinyNodePool == null)
+                _tinyNodePool = new DtNodePool();
 
-            DtNode startNode = tinyNodePool.GetNode(startRef);
+            _tinyNodePool.Clear();
+            DtNode startNode = _tinyNodePool.GetNode(startRef);
             startNode.pidx = 0;
             startNode.cost = 0;
             startNode.total = 0;
+            
             startNode.id = startRef;
             startNode.flags = DtNode.DT_NODE_CLOSED;
-            LinkedList<DtNode> stack = new LinkedList<DtNode>();
-            stack.AddLast(startNode);
+            _stack.Clear();
+            _stack.AddLast(startNode);
 
             RcVec3f bestPos = new RcVec3f();
             float bestDist = float.MaxValue;
@@ -1828,13 +1832,13 @@ namespace DotRecast.Detour
             var searchPos = RcVec3f.Lerp(startPos, endPos, 0.5f);
             float searchRadSqr = Sqr(RcVec3f.Distance(startPos, endPos) / 2.0f + 0.001f);
 
-            float[] verts = new float[m_nav.GetMaxVertsPerPoly() * 3];
+            Span<float> verts = stackalloc float[m_nav.GetMaxVertsPerPoly() * 3];
 
-            while (0 < stack.Count)
+            while (0 < _stack.Count)
             {
                 // Pop front.
-                DtNode curNode = stack.First?.Value;
-                stack.RemoveFirst();
+                DtNode curNode = _stack.First?.Value;
+                _stack.RemoveFirst();
 
                 // Get poly and tile.
                 // The API input has been cheked already, skip checking internal data.
@@ -1845,7 +1849,9 @@ namespace DotRecast.Detour
                 int nverts = curPoly.vertCount;
                 for (int i = 0; i < nverts; ++i)
                 {
-                    Array.Copy(curTile.data.verts, curPoly.verts[i] * 3, verts, i * 3, 3);
+                    verts[i * 3] = curTile.data.verts[curPoly.verts[i] * 3];
+                    verts[i * 3 + 1] = curTile.data.verts[curPoly.verts[i] * 3 + 1];
+                    verts[i * 3 + 2] = curTile.data.verts[curPoly.verts[i] * 3 + 2];
                 }
 
                 // If target is inside the poly, stop search.
@@ -1862,7 +1868,7 @@ namespace DotRecast.Detour
                     // Find links to neighbours.
                     int MAX_NEIS = 8;
                     int nneis = 0;
-                    long[] neis = new long[MAX_NEIS];
+                    var neis = stackalloc long[MAX_NEIS];
 
                     if ((curPoly.neis[j] & DtNavMesh.DT_EXT_LINK) != 0)
                     {
@@ -1915,7 +1921,7 @@ namespace DotRecast.Detour
                     {
                         for (int k = 0; k < nneis; ++k)
                         {
-                            DtNode neighbourNode = tinyNodePool.GetNode(neis[k]);
+                            DtNode neighbourNode = _tinyNodePool.GetNode(neis[k]);
                             // Skip if already visited.
                             if ((neighbourNode.flags & DtNode.DT_NODE_CLOSED) != 0)
                             {
@@ -1933,9 +1939,9 @@ namespace DotRecast.Detour
                             }
 
                             // Mark as the node as visited and push to queue.
-                            neighbourNode.pidx = tinyNodePool.GetNodeIdx(curNode);
+                            neighbourNode.pidx = _tinyNodePool.GetNodeIdx(curNode);
                             neighbourNode.flags |= DtNode.DT_NODE_CLOSED;
-                            stack.AddLast(neighbourNode);
+                            _stack.AddLast(neighbourNode);
                         }
                     }
                 }
@@ -1948,8 +1954,8 @@ namespace DotRecast.Detour
                 DtNode node = bestNode;
                 do
                 {
-                    DtNode next = tinyNodePool.GetNodeAtIdx(node.pidx);
-                    node.pidx = tinyNodePool.GetNodeIdx(prev);
+                    DtNode next = _tinyNodePool.GetNodeAtIdx(node.pidx);
+                    node.pidx = _tinyNodePool.GetNodeIdx(prev);
                     prev = node;
                     node = next;
                 } while (node != null);
@@ -1959,7 +1965,7 @@ namespace DotRecast.Detour
                 do
                 {
                     visited.Add(node.id);
-                    node = tinyNodePool.GetNodeAtIdx(node.pidx);
+                    node = _tinyNodePool.GetNodeAtIdx(node.pidx);
                 } while (node != null);
             }
 
@@ -3355,39 +3361,6 @@ namespace DotRecast.Detour
             return m_nav;
         }
 
-        /**
-     * Gets a path from the explored nodes in the previous search.
-     *
-     * @param endRef
-     *            The reference id of the end polygon.
-     * @returns An ordered list of polygon references representing the path. (Start to end.)
-     * @remarks The result of this function depends on the state of the query object. For that reason it should only be
-     *          used immediately after one of the two Dijkstra searches, findPolysAroundCircle or findPolysAroundShape.
-     */
-        public DtStatus GetPathFromDijkstraSearch(long endRef, List<long> path)
-        {
-            if (!m_nav.IsValidPolyRef(endRef) || null == path)
-            {
-                return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
-            }
-            
-            path.Clear();
-
-            List<DtNode> nodes = m_nodePool.FindNodes(endRef);
-            if (nodes.Count != 1)
-            {
-                return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
-            }
-
-            DtNode endNode = nodes[0];
-            if ((endNode.flags & DT_NODE_CLOSED) == 0)
-            {
-                return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
-            }
-
-            return GetPathToNode(endNode, path);
-        }
-
         // Gets the path leading to the specified end node.
         protected DtStatus GetPathToNode(DtNode endNode, List<long> path)
         {
@@ -3414,28 +3387,6 @@ namespace DotRecast.Detour
             } while (curNode != null);
 
             return DtStatus.DT_SUCCSESS;
-        }
-
-        /**
-     * The closed list is the list of polygons that were fully evaluated during the last navigation graph search. (A* or
-     * Dijkstra)
-     */
-        public bool IsInClosedList(long refs)
-        {
-            if (m_nodePool == null)
-            {
-                return false;
-            }
-
-            foreach (DtNode n in m_nodePool.FindNodes(refs))
-            {
-                if ((n.flags & DT_NODE_CLOSED) != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public DtNodePool GetNodePool()

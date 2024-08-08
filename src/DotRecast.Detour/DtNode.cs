@@ -31,7 +31,7 @@ namespace DotRecast.Detour
         /** parent of the node is not adjacent. Found using raycast. */
         public const int DT_NODE_PARENT_DETACHED = 0x04;
 
-        public readonly int index;
+        public int index;
 
         /** Position of the node. */
         public RcVec3f pos = new RcVec3f();

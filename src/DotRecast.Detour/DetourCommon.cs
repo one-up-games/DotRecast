@@ -265,7 +265,7 @@ namespace DotRecast.Detour
         /// @par
         ///
         /// All points are projected onto the xz-plane, so the y-values are ignored.
-        public static bool PointInPolygon(RcVec3f pt, float[] verts, int nverts)
+        public static bool PointInPolygon(RcVec3f pt, Span<float> verts, int nverts)
         {
             // TODO: Replace pnpoly with triArea2D tests?
             int i, j;
@@ -305,7 +305,7 @@ namespace DotRecast.Detour
             return c;
         }
 
-        public static float DistancePtSegSqr2D(RcVec3f pt, float[] verts, int p, int q, out float t)
+        public static float DistancePtSegSqr2D(RcVec3f pt, Span<float> verts, int p, int q, out float t)
         {
             var vp = RcVec3f.Of(verts, p);
             var vq = RcVec3f.Of(verts, q);
