@@ -3553,38 +3553,7 @@ namespace DotRecast.Detour
         {
             return m_nav;
         }
-
-        /// Gets a path from the explored nodes in the previous search.
-        ///  @param[in]		endRef		The reference id of the end polygon.
-        ///  @param[out]	path		An ordered list of polygon references representing the path. (Start to end.)
-        ///  							[(polyRef) * @p pathCount]
-        ///  @param[out]	pathCount	The number of polygons returned in the @p path array.
-        ///  @param[in]		maxPath		The maximum number of polygons the @p path array can hold. [Limit: >= 0]
-        ///  @returns		The status flags. Returns DT_FAILURE | DT_INVALID_PARAM if any parameter is wrong, or if
-        ///  				@p endRef was not explored in the previous search. Returns DT_SUCCESS | DT_BUFFER_TOO_SMALL
-        ///  				if @p path cannot contain the entire path. In this case it is filled to capacity with a partial path.
-        ///  				Otherwise returns DT_SUCCESS.
-        ///  @remarks		The result of this function depends on the state of the query object. For that reason it should only
-        ///  				be used immediately after one of the two Dijkstra searches, findPolysAroundCircle or findPolysAroundShape.
-        public DtStatus GetPathFromDijkstraSearch(long endRef, ref List<long> path)
-        {
-            if (!m_nav.IsValidPolyRef(endRef) || null == path)
-            {
-                return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
-            }
-
-            path.Clear();
-
-            if (m_nodePool.FindNodes(endRef, out var endNodes) != 1
-                || (endNodes[0].flags & DtNodeFlags.DT_NODE_CLOSED) == 0)
-            {
-                return DtStatus.DT_FAILURE | DtStatus.DT_INVALID_PARAM;
-            }
-
-            DtNode endNode = endNodes[0];
-
-            return GetPathToNode(endNode, ref path);
-        }
+        
 
         // Gets the path leading to the specified end node.
         protected DtStatus GetPathToNode(DtNode endNode, ref List<long> path)
@@ -3613,30 +3582,6 @@ namespace DotRecast.Detour
 
             path.Reverse();
             return DtStatus.DT_SUCCESS;
-        }
-
-        /// @par
-        ///
-        /// The closed list is the list of polygons that were fully evaluated during 
-        /// the last navigation graph search. (A* or Dijkstra)
-        /// 
-        public bool IsInClosedList(long refs)
-        {
-            if (m_nodePool == null)
-            {
-                return false;
-            }
-
-            int n = m_nodePool.FindNodes(refs, out var nodes);
-            for (int i = 0; i < n; ++i)
-            {
-                if ((nodes[i].flags & DtNodeFlags.DT_NODE_CLOSED) != 0)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         public DtNodePool GetNodePool()
