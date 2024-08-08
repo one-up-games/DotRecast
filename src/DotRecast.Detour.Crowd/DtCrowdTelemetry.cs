@@ -1,5 +1,6 @@
 /*
 recast4j copyright (c) 2021 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,9 +19,9 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using DotRecast.Core;
+using DotRecast.Core.Buffers;
 
 namespace DotRecast.Detour.Crowd
 {
@@ -30,8 +31,8 @@ namespace DotRecast.Detour.Crowd
         private float _maxTimeToEnqueueRequest;
         private float _maxTimeToFindPath;
 
-        private readonly Dictionary<string, long> _executionTimings = new Dictionary<string, long>();
-        private readonly Dictionary<string, List<long>> _executionTimingSamples = new Dictionary<string, List<long>>();
+        private readonly Dictionary<DtCrowdTimerLabel, long> _executionTimings = new Dictionary<DtCrowdTimerLabel, long>();
+        private readonly Dictionary<DtCrowdTimerLabel, RcCyclicBuffer<long>> _executionTimingSamples = new Dictionary<DtCrowdTimerLabel, RcCyclicBuffer<long>>();
 
         public float MaxTimeToEnqueueRequest()
         {
@@ -46,7 +47,7 @@ namespace DotRecast.Detour.Crowd
         public List<RcTelemetryTick> ToExecutionTimings()
         {
             return _executionTimings
-                .Select(e => new RcTelemetryTick(e.Key, e.Value))
+                .Select(e => new RcTelemetryTick(e.Key.Label, e.Value))
                 .OrderByDescending(x => x.Ticks)
                 .ToList();
         }
@@ -68,27 +69,27 @@ namespace DotRecast.Detour.Crowd
             _maxTimeToFindPath = Math.Max(_maxTimeToFindPath, time);
         }
 
-        public void Start(string name)
+        internal DtCrowdScopedTimer ScopedTimer(DtCrowdTimerLabel label)
+        {
+            return new DtCrowdScopedTimer(this, label);
+        }
+
+        internal void Start(DtCrowdTimerLabel name)
         {
             _executionTimings.Add(name, RcFrequency.Ticks);
         }
 
-        public void Stop(string name)
+        internal void Stop(DtCrowdTimerLabel name)
         {
             long duration = RcFrequency.Ticks - _executionTimings[name];
-            if (!_executionTimingSamples.TryGetValue(name, out var s))
+            if (!_executionTimingSamples.TryGetValue(name, out var cb))
             {
-                s = new List<long>();
-                _executionTimingSamples.Add(name, s);
+                cb = new RcCyclicBuffer<long>(TIMING_SAMPLES);
+                _executionTimingSamples.Add(name, cb);
             }
 
-            if (s.Count == TIMING_SAMPLES)
-            {
-                s.RemoveAt(0);
-            }
-
-            s.Add(duration);
-            _executionTimings[name] = (long)s.Average();
+            cb.PushBack(duration);
+            _executionTimings[name] = (long)cb.Average();
         }
     }
 }

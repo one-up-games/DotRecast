@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -17,16 +18,16 @@ freely, subject to the following restrictions:
 */
 
 using System.Collections.Generic;
-using DotRecast.Core;
+using DotRecast.Core.Numerics;
 
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
+
 public class TiledFindPathTest
 {
-    private static readonly DtStatus[] STATUSES = { DtStatus.DT_SUCCSESS };
+    private static readonly DtStatus[] STATUSES = { DtStatus.DT_SUCCESS };
 
     private static readonly long[][] RESULTS =
     {
@@ -43,8 +44,8 @@ public class TiledFindPathTest
 
     protected static readonly long[] START_REFS = { 281475015507969L };
     protected static readonly long[] END_REFS = { 281474985099266L };
-    protected static readonly RcVec3f[] START_POS = { RcVec3f.Of(39.447338f, 9.998177f, -0.784811f) };
-    protected static readonly RcVec3f[] END_POS = { RcVec3f.Of(19.292645f, 11.611748f, -57.750366f) };
+    protected static readonly RcVec3f[] START_POS = { new RcVec3f(39.447338f, 9.998177f, -0.784811f) };
+    protected static readonly RcVec3f[] END_POS = { new RcVec3f(19.292645f, 11.611748f, -57.750366f) };
 
     protected DtNavMeshQuery query;
     protected DtNavMesh navmesh;
@@ -72,7 +73,7 @@ public class TiledFindPathTest
             long endRef = END_REFS[i];
             RcVec3f startPos = START_POS[i];
             RcVec3f endPos = END_POS[i];
-            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, path, DtFindPathOption.NoOption);
+            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, ref path, DtFindPathOption.NoOption);
             Assert.That(status, Is.EqualTo(STATUSES[i]));
             Assert.That(path.Count, Is.EqualTo(RESULTS[i].Length));
             for (int j = 0; j < RESULTS[i].Length; j++)

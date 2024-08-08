@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,13 +17,13 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using DotRecast.Core;
-
+using System;
+using System.Collections.Generic;
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
 public class MoveAlongSurfaceTest : AbstractDetourTest
 {
     private static readonly long[][] VISITED =
@@ -56,34 +57,35 @@ public class MoveAlongSurfaceTest : AbstractDetourTest
         }
     };
 
-    private static readonly float[][] POSITION =
+    private static readonly RcVec3f[] POSITION =
     {
-        new[] { 6.457663f, 10.197294f, -18.334061f },
-        new[] { -1.433933f, 10.197294f, -1.359993f },
-        new[] { 12.184784f, 9.997294f, -18.941269f },
-        new[] { 0.863553f, 10.197294f, -10.310320f },
-        new[] { 18.784092f, 10.197294f, 3.054368f }
+        new RcVec3f(6.457663f, 10.197294f, -18.334061f),
+        new RcVec3f(-1.433933f, 10.197294f, -1.359993f),
+        new RcVec3f(12.184784f, 9.997294f, -18.941269f),
+        new RcVec3f(0.863553f, 10.197294f, -10.310320f),
+        new RcVec3f(18.784092f, 10.197294f, 3.054368f),
     };
 
     [Test]
     public void TestMoveAlongSurface()
     {
         IDtQueryFilter filter = new DtQueryDefaultFilter();
+        const int MAX_VISITED = 32;
+        Span<long> visited = stackalloc long[MAX_VISITED];
         for (int i = 0; i < startRefs.Length; i++)
         {
             long startRef = startRefs[i];
             RcVec3f startPos = startPoss[i];
             RcVec3f endPos = endPoss[i];
-            var status = query.MoveAlongSurface(startRef, startPos, endPos, filter, out var result, out var visited);
+            var status = query.MoveAlongSurface(startRef, startPos, endPos, filter, out var result, visited, out var nvisited, MAX_VISITED);
             Assert.That(status.Succeeded(), Is.True);
-            
-            for (int v = 0; v < 3; v++)
-            {
-                Assert.That(result[v], Is.EqualTo(POSITION[i][v]).Within(0.01f));
-            }
 
-            Assert.That(visited.Count, Is.EqualTo(VISITED[i].Length));
-            for (int j = 0; j < POSITION[i].Length; j++)
+            Assert.That(result.X, Is.EqualTo(POSITION[i].X).Within(0.01f));
+            Assert.That(result.Y, Is.EqualTo(POSITION[i].Y).Within(0.01f));
+            Assert.That(result.Z, Is.EqualTo(POSITION[i].Z).Within(0.01f));
+
+            Assert.That(nvisited, Is.EqualTo(VISITED[i].Length));
+            for (int j = 0; j < 3; j++)
             {
                 Assert.That(visited[j], Is.EqualTo(VISITED[i][j]));
             }

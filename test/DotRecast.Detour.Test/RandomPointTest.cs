@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2021 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -17,23 +18,24 @@ freely, subject to the following restrictions:
 */
 
 using System;
-using System.Diagnostics;
 using DotRecast.Core;
-
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
-using static DotRecast.Core.RcMath;
+
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
 public class RandomPointTest : AbstractDetourTest
 {
     [Test]
+    [Repeat(10)]
     public void TestRandom()
     {
-        FRand f = new FRand(1);
+        RcRand f = new RcRand(1);
         IDtQueryFilter filter = new DtQueryDefaultFilter();
-        for (int i = 0; i < 1000; i++)
+
+        var begin = RcFrequency.Ticks;
+        for (int i = 0; i < 10000; i++)
         {
             var status = query.FindRandomPoint(filter, f, out var randomRef, out var randomPt);
             Assert.That(status.Succeeded(), Is.True);
@@ -50,17 +52,20 @@ public class RandomPointTest : AbstractDetourTest
                 bmax[1] = j == 0 ? tile.data.verts[v + 2] : Math.Max(bmax[1], tile.data.verts[v + 2]);
             }
 
-            Assert.That(randomPt.x >= bmin[0], Is.True);
-            Assert.That(randomPt.x <= bmax[0], Is.True);
-            Assert.That(randomPt.z >= bmin[1], Is.True);
-            Assert.That(randomPt.z <= bmax[1], Is.True);
+            Assert.That(randomPt.X >= bmin[0], Is.True);
+            Assert.That(randomPt.X <= bmax[0], Is.True);
+            Assert.That(randomPt.Z >= bmin[1], Is.True);
+            Assert.That(randomPt.Z <= bmax[1], Is.True);
         }
+
+        var ticks = RcFrequency.Ticks - begin;
+        Console.WriteLine($"RandomPointTest::TestRandom() - {(double)ticks / TimeSpan.TicksPerMillisecond} ms");
     }
 
     [Test]
     public void TestRandomAroundCircle()
     {
-        FRand f = new FRand(1);
+        RcRand f = new RcRand(1);
         IDtQueryFilter filter = new DtQueryDefaultFilter();
         query.FindRandomPoint(filter, f, out var randomRef, out var randomPt);
         for (int i = 0; i < 1000; i++)
@@ -72,7 +77,7 @@ public class RandomPointTest : AbstractDetourTest
             randomPt = nextRandomPt;
 
             status = navmesh.GetTileAndPolyByRef(randomRef, out var tile, out var poly);
-            
+
             float[] bmin = new float[2];
             float[] bmax = new float[2];
             for (int j = 0; j < poly.vertCount; j++)
@@ -84,17 +89,17 @@ public class RandomPointTest : AbstractDetourTest
                 bmax[1] = j == 0 ? tile.data.verts[v + 2] : Math.Max(bmax[1], tile.data.verts[v + 2]);
             }
 
-            Assert.That(randomPt.x >= bmin[0], Is.True);
-            Assert.That(randomPt.x <= bmax[0], Is.True);
-            Assert.That(randomPt.z >= bmin[1], Is.True);
-            Assert.That(randomPt.z <= bmax[1], Is.True);
+            Assert.That(randomPt.X >= bmin[0], Is.True);
+            Assert.That(randomPt.X <= bmax[0], Is.True);
+            Assert.That(randomPt.Z >= bmin[1], Is.True);
+            Assert.That(randomPt.Z <= bmax[1], Is.True);
         }
     }
 
     [Test]
     public void TestRandomWithinCircle()
     {
-        FRand f = new FRand(1);
+        RcRand f = new RcRand(1);
         IDtQueryFilter filter = new DtQueryDefaultFilter();
         query.FindRandomPoint(filter, f, out var randomRef, out var randomPt);
         float radius = 5f;
@@ -103,7 +108,7 @@ public class RandomPointTest : AbstractDetourTest
             var status = query.FindRandomPointWithinCircle(randomRef, randomPt, radius, filter, f, out var nextRandomRef, out var nextRandomPt);
             Assert.That(status.Failed(), Is.False);
 
-            float distance = RcVec3f.Dist2D(randomPt, nextRandomPt);
+            float distance = RcVec.Dist2D(randomPt, nextRandomPt);
             Assert.That(distance <= radius, Is.True);
 
             randomRef = nextRandomRef;
@@ -114,7 +119,7 @@ public class RandomPointTest : AbstractDetourTest
     [Test]
     public void TestPerformance()
     {
-        FRand f = new FRand(1);
+        RcRand f = new RcRand(1);
         IDtQueryFilter filter = new DtQueryDefaultFilter();
         query.FindRandomPoint(filter, f, out var randomRef, out var randomPt);
 

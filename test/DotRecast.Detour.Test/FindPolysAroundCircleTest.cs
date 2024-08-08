@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,13 +17,13 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using DotRecast.Core;
-
+using System.Collections.Generic;
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
+
 public class FindPolysAroundCircleTest : AbstractDetourTest
 {
     private static readonly long[][] REFS =
@@ -102,13 +103,16 @@ public class FindPolysAroundCircleTest : AbstractDetourTest
     public void TestFindPolysAroundCircle()
     {
         IDtQueryFilter filter = new DtQueryDefaultFilter();
+        var refs = new List<long>();
+        var parentRefs = new List<long>();
+        var costs = new List<float>();
         for (int i = 0; i < startRefs.Length; i++)
         {
             long startRef = startRefs[i];
             RcVec3f startPos = startPoss[i];
-            var status = query.FindPolysAroundCircle(startRef, startPos, 7.5f, filter, out var refs, out var parentRefs, out var costs);
+            var status = query.FindPolysAroundCircle(startRef, startPos, 7.5f, filter, ref refs, ref parentRefs, ref costs);
             Assert.That(status.Succeeded(), Is.True);
-            
+
             Assert.That(refs.Count, Is.EqualTo(REFS[i].Length));
             for (int v = 0; v < REFS[i].Length; v++)
             {

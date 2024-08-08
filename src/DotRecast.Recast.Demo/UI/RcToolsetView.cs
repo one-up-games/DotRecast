@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2021 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,11 +18,9 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using System;
 using System.Numerics;
-using DotRecast.Core;
+using DotRecast.Core.Collections;
 using DotRecast.Recast.Demo.Tools;
-using DotRecast.Recast.DemoTool;
 using ImGuiNET;
 
 namespace DotRecast.Recast.Demo.UI;
@@ -31,15 +29,15 @@ public class RcToolsetView : IRcView
 {
     //private readonly NkColor white = NkColor.Create();
     private int _currentToolIdx = 0;
-    private IRcTool currentTool;
+    private ISampleTool _currentSampleTool;
     private bool enabled;
-    private readonly IRcTool[] tools;
+    private readonly ISampleTool[] tools;
     private bool _isHovered;
     public bool IsHovered() => _isHovered;
 
     private RcCanvas _canvas;
 
-    public RcToolsetView(params IRcTool[] tools)
+    public RcToolsetView(params ISampleTool[] tools)
     {
         this.tools = tools;
     }
@@ -56,7 +54,7 @@ public class RcToolsetView : IRcView
     public void Draw(double dt)
     {
         ImGui.Begin("Tools");
-        
+
         // size reset
         var size = ImGui.GetItemRectSize();
         if (32 >= size.X && 32 >= size.Y)
@@ -65,7 +63,7 @@ public class RcToolsetView : IRcView
             //ImGui.SetWindowPos(new Vector2(0, 0));
             ImGui.SetWindowSize(new Vector2(width, _canvas.Size.Y));
         }
-        
+
         _isHovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.RectOnly | ImGuiHoveredFlags.RootAndChildWindows);
 
         for (int i = 0; i < tools.Length; ++i)
@@ -82,10 +80,10 @@ public class RcToolsetView : IRcView
             return;
         }
 
-        currentTool = tools[_currentToolIdx];
-        ImGui.Text(currentTool.GetTool().GetName());
+        _currentSampleTool = tools[_currentToolIdx];
+        ImGui.Text(_currentSampleTool.GetTool().GetName());
         ImGui.Separator();
-        currentTool.Layout();
+        _currentSampleTool.Layout();
 
         ImGui.End();
     }
@@ -95,19 +93,14 @@ public class RcToolsetView : IRcView
         this.enabled = enabled;
     }
 
-    public IRcTool GetTool()
+    public ISampleTool GetTool()
     {
-        return currentTool;
+        return _currentSampleTool;
     }
 
-    public void SetSample(Sample sample)
+    public void SetSample(DemoSample sample)
     {
-        tools.ForEach(t => t.GetTool().SetSample(sample));
+        tools.ForEach(t => t.SetSample(sample));
         tools.ForEach(t => t.OnSampleChanged());
-    }
-
-    public void HandleUpdate(float dt)
-    {
-        tools.ForEach(t => t.HandleUpdate(dt));
     }
 }

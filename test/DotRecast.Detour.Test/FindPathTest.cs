@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,23 +17,22 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+using System;
 using System.Collections.Generic;
-using DotRecast.Core;
-
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
 public class FindPathTest : AbstractDetourTest
 {
     private static readonly DtStatus[] STATUSES =
     {
-        DtStatus.DT_SUCCSESS,
-        DtStatus.DT_SUCCSESS | DtStatus.DT_PARTIAL_RESULT,
-        DtStatus.DT_SUCCSESS,
-        DtStatus.DT_SUCCSESS,
-        DtStatus.DT_SUCCSESS
+        DtStatus.DT_SUCCESS,
+        DtStatus.DT_SUCCESS | DtStatus.DT_PARTIAL_RESULT,
+        DtStatus.DT_SUCCESS,
+        DtStatus.DT_SUCCESS,
+        DtStatus.DT_SUCCESS
     };
 
     private static readonly long[][] RESULTS =
@@ -71,63 +71,63 @@ public class FindPathTest : AbstractDetourTest
         }
     };
 
-    private static readonly StraightPathItem[][] STRAIGHT_PATHS =
+    private static readonly DtStraightPath[][] STRAIGHT_PATHS =
     {
         new[]
         {
-            new StraightPathItem(RcVec3f.Of(22.606520f, 10.197294f, -45.918674f), 1, 281474976710696L),
-            new StraightPathItem(RcVec3f.Of(3.484785f, 10.197294f, -34.241272f), 0, 281474976710713L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -31.241272f), 0, 281474976710712L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -29.741272f), 0, 281474976710727L),
-            new StraightPathItem(RcVec3f.Of(2.584784f, 10.197294f, -27.941273f), 0, 281474976710730L),
-            new StraightPathItem(RcVec3f.Of(6.457663f, 10.197294f, -18.334061f), 2, 0L)
+            new DtStraightPath(new RcVec3f(22.606520f, 10.197294f, -45.918674f), 1, 281474976710696L),
+            new DtStraightPath(new RcVec3f(3.484785f, 10.197294f, -34.241272f), 0, 281474976710713L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -31.241272f), 0, 281474976710712L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -29.741272f), 0, 281474976710727L),
+            new DtStraightPath(new RcVec3f(2.584784f, 10.197294f, -27.941273f), 0, 281474976710730L),
+            new DtStraightPath(new RcVec3f(6.457663f, 10.197294f, -18.334061f), 2, 0L)
         },
 
         new[]
         {
-            new StraightPathItem(RcVec3f.Of(22.331268f, 10.197294f, -1.040187f), 1, 281474976710773L),
-            new StraightPathItem(RcVec3f.Of(9.784786f, 10.197294f, -2.141273f), 0, 281474976710755L),
-            new StraightPathItem(RcVec3f.Of(7.984783f, 10.197294f, -2.441269f), 0, 281474976710753L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -8.441269f), 0, 281474976710752L),
-            new StraightPathItem(RcVec3f.Of(-4.315216f, 10.197294f, -15.341270f), 0, 281474976710724L),
-            new StraightPathItem(RcVec3f.Of(-8.215216f, 10.197294f, -17.441269f), 0, 281474976710728L),
-            new StraightPathItem(RcVec3f.Of(-10.015216f, 10.197294f, -17.741272f), 0, 281474976710738L),
-            new StraightPathItem(RcVec3f.Of(-11.815216f, 9.997294f, -17.441269f), 0, 281474976710736L),
-            new StraightPathItem(RcVec3f.Of(-17.815216f, 5.197294f, -11.441269f), 0, 281474976710735L),
-            new StraightPathItem(RcVec3f.Of(-17.815216f, 5.197294f, -8.441269f), 0, 281474976710746L),
-            new StraightPathItem(RcVec3f.Of(-11.815216f, 0.197294f, 3.008419f), 2, 0L)
+            new DtStraightPath(new RcVec3f(22.331268f, 10.197294f, -1.040187f), 1, 281474976710773L),
+            new DtStraightPath(new RcVec3f(9.784786f, 10.197294f, -2.141273f), 0, 281474976710755L),
+            new DtStraightPath(new RcVec3f(7.984783f, 10.197294f, -2.441269f), 0, 281474976710753L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -8.441269f), 0, 281474976710752L),
+            new DtStraightPath(new RcVec3f(-4.315216f, 10.197294f, -15.341270f), 0, 281474976710724L),
+            new DtStraightPath(new RcVec3f(-8.215216f, 10.197294f, -17.441269f), 0, 281474976710728L),
+            new DtStraightPath(new RcVec3f(-10.015216f, 10.197294f, -17.741272f), 0, 281474976710738L),
+            new DtStraightPath(new RcVec3f(-11.815216f, 9.997294f, -17.441269f), 0, 281474976710736L),
+            new DtStraightPath(new RcVec3f(-17.815216f, 5.197294f, -11.441269f), 0, 281474976710735L),
+            new DtStraightPath(new RcVec3f(-17.815216f, 5.197294f, -8.441269f), 0, 281474976710746L),
+            new DtStraightPath(new RcVec3f(-11.815216f, 0.197294f, 3.008419f), 2, 0L)
         },
 
         new[]
         {
-            new StraightPathItem(RcVec3f.Of(18.694363f, 15.803535f, -73.090416f), 1, 281474976710680L),
-            new StraightPathItem(RcVec3f.Of(17.584785f, 10.197294f, -49.841274f), 0, 281474976710697L),
-            new StraightPathItem(RcVec3f.Of(17.284786f, 10.197294f, -48.041275f), 0, 281474976710695L),
-            new StraightPathItem(RcVec3f.Of(16.084785f, 10.197294f, -45.341274f), 0, 281474976710694L),
-            new StraightPathItem(RcVec3f.Of(3.484785f, 10.197294f, -34.241272f), 0, 281474976710713L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -31.241272f), 0, 281474976710712L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -8.441269f), 0, 281474976710753L),
-            new StraightPathItem(RcVec3f.Of(7.984783f, 10.197294f, -2.441269f), 0, 281474976710755L),
-            new StraightPathItem(RcVec3f.Of(9.784786f, 10.197294f, -2.141273f), 0, 281474976710768L),
-            new StraightPathItem(RcVec3f.Of(38.423977f, 10.197294f, -0.116067f), 2, 0L)
+            new DtStraightPath(new RcVec3f(18.694363f, 15.803535f, -73.090416f), 1, 281474976710680L),
+            new DtStraightPath(new RcVec3f(17.584785f, 10.197294f, -49.841274f), 0, 281474976710697L),
+            new DtStraightPath(new RcVec3f(17.284786f, 10.197294f, -48.041275f), 0, 281474976710695L),
+            new DtStraightPath(new RcVec3f(16.084785f, 10.197294f, -45.341274f), 0, 281474976710694L),
+            new DtStraightPath(new RcVec3f(3.484785f, 10.197294f, -34.241272f), 0, 281474976710713L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -31.241272f), 0, 281474976710712L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -8.441269f), 0, 281474976710753L),
+            new DtStraightPath(new RcVec3f(7.984783f, 10.197294f, -2.441269f), 0, 281474976710755L),
+            new DtStraightPath(new RcVec3f(9.784786f, 10.197294f, -2.141273f), 0, 281474976710768L),
+            new DtStraightPath(new RcVec3f(38.423977f, 10.197294f, -0.116067f), 2, 0L)
         },
 
         new[]
         {
-            new StraightPathItem(RcVec3f.Of(0.745335f, 10.197294f, -5.940050f), 1, 281474976710753L),
-            new StraightPathItem(RcVec3f.Of(0.863553f, 10.197294f, -10.310320f), 2, 0L)
+            new DtStraightPath(new RcVec3f(0.745335f, 10.197294f, -5.940050f), 1, 281474976710753L),
+            new DtStraightPath(new RcVec3f(0.863553f, 10.197294f, -10.310320f), 2, 0L)
         },
 
         new[]
         {
-            new StraightPathItem(RcVec3f.Of(-20.651257f, 5.904126f, -13.712508f), 1, 281474976710733L),
-            new StraightPathItem(RcVec3f.Of(-11.815216f, 9.997294f, -17.441269f), 0, 281474976710738L),
-            new StraightPathItem(RcVec3f.Of(-10.015216f, 10.197294f, -17.741272f), 0, 281474976710728L),
-            new StraightPathItem(RcVec3f.Of(-8.215216f, 10.197294f, -17.441269f), 0, 281474976710724L),
-            new StraightPathItem(RcVec3f.Of(-4.315216f, 10.197294f, -15.341270f), 0, 281474976710729L),
-            new StraightPathItem(RcVec3f.Of(1.984785f, 10.197294f, -8.441269f), 0, 281474976710753L),
-            new StraightPathItem(RcVec3f.Of(7.984783f, 10.197294f, -2.441269f), 0, 281474976710755L),
-            new StraightPathItem(RcVec3f.Of(18.784092f, 10.197294f, 3.054368f), 2, 0L)
+            new DtStraightPath(new RcVec3f(-20.651257f, 5.904126f, -13.712508f), 1, 281474976710733L),
+            new DtStraightPath(new RcVec3f(-11.815216f, 9.997294f, -17.441269f), 0, 281474976710738L),
+            new DtStraightPath(new RcVec3f(-10.015216f, 10.197294f, -17.741272f), 0, 281474976710728L),
+            new DtStraightPath(new RcVec3f(-8.215216f, 10.197294f, -17.441269f), 0, 281474976710724L),
+            new DtStraightPath(new RcVec3f(-4.315216f, 10.197294f, -15.341270f), 0, 281474976710729L),
+            new DtStraightPath(new RcVec3f(1.984785f, 10.197294f, -8.441269f), 0, 281474976710753L),
+            new DtStraightPath(new RcVec3f(7.984783f, 10.197294f, -2.441269f), 0, 281474976710755L),
+            new DtStraightPath(new RcVec3f(18.784092f, 10.197294f, 3.054368f), 2, 0L)
         }
     };
 
@@ -142,7 +142,7 @@ public class FindPathTest : AbstractDetourTest
             long endRef = endRefs[i];
             RcVec3f startPos = startPoss[i];
             RcVec3f endPos = endPoss[i];
-            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, path, DtFindPathOption.NoOption);
+            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, ref path, DtFindPathOption.NoOption);
             Assert.That(status, Is.EqualTo(STATUSES[i]));
             Assert.That(path.Count, Is.EqualTo(RESULTS[i].Length));
             for (int j = 0; j < RESULTS[i].Length; j++)
@@ -163,14 +163,14 @@ public class FindPathTest : AbstractDetourTest
             long endRef = endRefs[i];
             var startPos = startPoss[i];
             var endPos = endPoss[i];
-            query.InitSlicedFindPath(startRef, endRef, startPos, endPos, filter, DtNavMeshQuery.DT_FINDPATH_ANY_ANGLE);
+            query.InitSlicedFindPath(startRef, endRef, startPos, endPos, filter, DtFindPathOptions.DT_FINDPATH_ANY_ANGLE);
             DtStatus status = DtStatus.DT_IN_PROGRESS;
             while (status.InProgress())
             {
                 status = query.UpdateSlicedFindPath(10, out var _);
             }
 
-            status = query.FinalizeSlicedFindPath(path);
+            status = query.FinalizeSlicedFindPath(ref path);
             Assert.That(status, Is.EqualTo(STATUSES[i]), $"index({i})");
             Assert.That(path.Count, Is.EqualTo(RESULTS[i].Length));
             for (int j = 0; j < RESULTS[i].Length; j++)
@@ -185,6 +185,7 @@ public class FindPathTest : AbstractDetourTest
     {
         IDtQueryFilter filter = new DtQueryDefaultFilter();
         var path = new List<long>();
+        Span<DtStraightPath> straightPath = stackalloc DtStraightPath[256];
         for (int i = 0; i < STRAIGHT_PATHS.Length; i++)
         {
             // startRefs.Length; i++) {
@@ -192,18 +193,15 @@ public class FindPathTest : AbstractDetourTest
             long endRef = endRefs[i];
             var startPos = startPoss[i];
             var endPos = endPoss[i];
-            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, path, DtFindPathOption.NoOption);
-            var straightPath = new List<StraightPathItem>();
-            query.FindStraightPath(startPos, endPos, path, straightPath, int.MaxValue, 0);
-            Assert.That(straightPath.Count, Is.EqualTo(STRAIGHT_PATHS[i].Length));
+            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, ref path, DtFindPathOption.NoOption);
+            query.FindStraightPath(startPos, endPos, path, path.Count, straightPath, out var nstraightPath, 256, 0);
+            Assert.That(nstraightPath, Is.EqualTo(STRAIGHT_PATHS[i].Length));
             for (int j = 0; j < STRAIGHT_PATHS[i].Length; j++)
             {
                 Assert.That(straightPath[j].refs, Is.EqualTo(STRAIGHT_PATHS[i][j].refs));
-                for (int v = 0; v < 3; v++)
-                {
-                    Assert.That(straightPath[j].pos[v], Is.EqualTo(STRAIGHT_PATHS[i][j].pos[v]).Within(0.01f));
-                }
-
+                Assert.That(straightPath[j].pos.X, Is.EqualTo(STRAIGHT_PATHS[i][j].pos.X).Within(0.01f));
+                Assert.That(straightPath[j].pos.Y, Is.EqualTo(STRAIGHT_PATHS[i][j].pos.Y).Within(0.01f));
+                Assert.That(straightPath[j].pos.Z, Is.EqualTo(STRAIGHT_PATHS[i][j].pos.Z).Within(0.01f));
                 Assert.That(straightPath[j].flags, Is.EqualTo(STRAIGHT_PATHS[i][j].flags));
             }
         }

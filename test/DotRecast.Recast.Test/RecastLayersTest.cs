@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,15 +19,12 @@ freely, subject to the following restrictions:
 
 using System;
 using System.IO;
-using DotRecast.Core;
+using DotRecast.Core.Numerics;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
 
 namespace DotRecast.Recast.Test;
 
-using static RcConstants;
-
-[Parallelizable]
 public class RecastLayersTest
 {
     private const float m_cellSize = 0.3f;
@@ -44,7 +42,7 @@ public class RecastLayersTest
     private const int m_vertsPerPoly = 6;
     private const float m_detailSampleDist = 6.0f;
     private const float m_detailSampleMaxError = 1.0f;
-    private readonly PartitionType m_partitionType = PartitionType.WATERSHED;
+    private readonly int m_partitionType = RcPartitionType.WATERSHED.Value;
     private const int m_tileSize = 48;
 
     [Test]
@@ -145,13 +143,20 @@ public class RecastLayersTest
 
     private RcHeightfieldLayerSet Build(string filename, int x, int y)
     {
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes(filename));
-        RecastBuilder builder = new RecastBuilder();
-        RcConfig cfg = new RcConfig(true, m_tileSize, m_tileSize, RcConfig.CalcBorder(m_agentRadius, m_cellSize),
-            m_partitionType, m_cellSize, m_cellHeight, m_agentMaxSlope, true, true, true, m_agentHeight, m_agentRadius,
-            m_agentMaxClimb, m_regionMinArea, m_regionMergeArea, m_edgeMaxLen, m_edgeMaxError, m_vertsPerPoly, true,
-            m_detailSampleDist, m_detailSampleMaxError, SampleAreaModifications.SAMPLE_AREAMOD_GROUND);
-        RecastBuilderConfig bcfg = new RecastBuilderConfig(cfg, geom.GetMeshBoundsMin(), geom.GetMeshBoundsMax(), x, y);
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile(filename);
+        RcBuilder builder = new RcBuilder();
+        RcConfig cfg = new RcConfig(true, m_tileSize, m_tileSize,
+            RcConfig.CalcBorder(m_agentRadius, m_cellSize),
+            RcPartitionType.OfValue(m_partitionType),
+            m_cellSize, m_cellHeight,
+            m_agentMaxSlope, m_agentHeight, m_agentRadius, m_agentMaxClimb,
+            m_regionMinArea, m_regionMergeArea,
+            m_edgeMaxLen, m_edgeMaxError,
+            m_vertsPerPoly,
+            m_detailSampleDist, m_detailSampleMaxError,
+            true, true, true,
+            SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true);
+        RcBuilderConfig bcfg = new RcBuilderConfig(cfg, geom.GetMeshBoundsMin(), geom.GetMeshBoundsMax(), x, y);
         RcHeightfieldLayerSet lset = builder.BuildLayers(geom, bcfg);
         return lset;
     }

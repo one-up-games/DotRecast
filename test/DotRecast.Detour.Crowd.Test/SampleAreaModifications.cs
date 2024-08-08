@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -30,17 +31,17 @@ public class SampleAreaModifications
     public const int SAMPLE_POLYAREA_TYPE_GRASS = 0x5;
     public const int SAMPLE_POLYAREA_TYPE_JUMP = 0x6;
 
-    public static AreaModification SAMPLE_AREAMOD_GROUND = new AreaModification(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK);
-    public static AreaModification SAMPLE_AREAMOD_WATER = new AreaModification(SAMPLE_POLYAREA_TYPE_WATER, SAMPLE_POLYAREA_TYPE_MASK);
-    public static AreaModification SAMPLE_AREAMOD_ROAD = new AreaModification(SAMPLE_POLYAREA_TYPE_ROAD, SAMPLE_POLYAREA_TYPE_MASK);
-    public static AreaModification SAMPLE_AREAMOD_GRASS = new AreaModification(SAMPLE_POLYAREA_TYPE_GRASS, SAMPLE_POLYAREA_TYPE_MASK);
-    public static AreaModification SAMPLE_AREAMOD_DOOR = new AreaModification(SAMPLE_POLYAREA_TYPE_DOOR, SAMPLE_POLYAREA_TYPE_DOOR);
-    public static AreaModification SAMPLE_AREAMOD_JUMP = new AreaModification(SAMPLE_POLYAREA_TYPE_JUMP, SAMPLE_POLYAREA_TYPE_JUMP);
-
     public const int SAMPLE_POLYFLAGS_WALK = 0x01; // Ability to walk (ground, grass, road)
     public const int SAMPLE_POLYFLAGS_SWIM = 0x02; // Ability to swim (water).
     public const int SAMPLE_POLYFLAGS_DOOR = 0x04; // Ability to move through doors.
     public const int SAMPLE_POLYFLAGS_JUMP = 0x08; // Ability to jump.
     public const int SAMPLE_POLYFLAGS_DISABLED = 0x10; // Disabled polygon
     public const int SAMPLE_POLYFLAGS_ALL = 0xffff; // All abilities.
+
+    public static readonly RcAreaModification SAMPLE_AREAMOD_GROUND = new RcAreaModification(SAMPLE_POLYAREA_TYPE_GROUND, SAMPLE_POLYAREA_TYPE_MASK);
+    public static readonly RcAreaModification SAMPLE_AREAMOD_WATER = new RcAreaModification(SAMPLE_POLYAREA_TYPE_WATER, SAMPLE_POLYAREA_TYPE_MASK);
+    public static readonly RcAreaModification SAMPLE_AREAMOD_ROAD = new RcAreaModification(SAMPLE_POLYAREA_TYPE_ROAD, SAMPLE_POLYAREA_TYPE_MASK);
+    public static readonly RcAreaModification SAMPLE_AREAMOD_GRASS = new RcAreaModification(SAMPLE_POLYAREA_TYPE_GRASS, SAMPLE_POLYAREA_TYPE_MASK);
+    public static readonly RcAreaModification SAMPLE_AREAMOD_DOOR = new RcAreaModification(SAMPLE_POLYAREA_TYPE_DOOR, SAMPLE_POLYAREA_TYPE_DOOR);
+    public static readonly RcAreaModification SAMPLE_AREAMOD_JUMP = new RcAreaModification(SAMPLE_POLYAREA_TYPE_JUMP, SAMPLE_POLYAREA_TYPE_JUMP);
 }

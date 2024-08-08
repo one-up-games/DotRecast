@@ -1,5 +1,6 @@
 /*
-recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -19,9 +20,9 @@ freely, subject to the following restrictions:
 using System;
 using System.IO;
 using System.IO.Compression;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace DotRecast.Detour.Extras.Unity.Astar
 {
@@ -41,7 +42,7 @@ namespace DotRecast.Detour.Extras.Unity.Astar
             var regex = new Regex(pattern);
             json = regex.Replace(json, replacement);
 
-            var meta = JsonSerializer.Deserialize<Meta>(json);
+            var meta = JsonConvert.DeserializeObject<Meta>(json);
             if (!meta.IsSupportedType())
             {
                 throw new ArgumentException("Unsupported graph type " + string.Join(", ", meta.typeNames));

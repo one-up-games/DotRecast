@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22,17 +22,17 @@ using System.Collections.Generic;
 using System.IO;
 using DotRecast.Core;
 using DotRecast.Detour.TileCache.Io;
-using DotRecast.Recast;
+using DotRecast.Detour.TileCache.Io.Compress;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.TileCache.Test.Io;
 
-[Parallelizable]
+
 public class TileCacheReaderWriterTest : AbstractTileCacheTest
 {
-    private readonly DtTileCacheReader reader = new DtTileCacheReader();
-    private readonly DtTileCacheWriter writer = new DtTileCacheWriter();
+    private readonly DtTileCacheReader reader = new DtTileCacheReader(DtTileCacheCompressorFactory.Shared);
+    private readonly DtTileCacheWriter writer = new DtTileCacheWriter(DtTileCacheCompressorFactory.Shared);
 
     [Test]
     public void TestFastLz()
@@ -50,7 +50,7 @@ public class TileCacheReaderWriterTest : AbstractTileCacheTest
 
     private void TestDungeon(bool cCompatibility)
     {
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("dungeon.obj"));
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("dungeon.obj");
         TestTileLayerBuilder layerBuilder = new TestTileLayerBuilder(geom);
         List<byte[]> layers = layerBuilder.Build(RcByteOrder.LITTLE_ENDIAN, cCompatibility, 1);
         DtTileCache tc = GetTileCache(geom, RcByteOrder.LITTLE_ENDIAN, cCompatibility);
@@ -60,13 +60,13 @@ public class TileCacheReaderWriterTest : AbstractTileCacheTest
             tc.BuildNavMeshTile(refs);
         }
 
-        using var msout = new MemoryStream();
-        using var baos = new BinaryWriter(msout);
-        writer.Write(baos, tc, RcByteOrder.LITTLE_ENDIAN, cCompatibility);
+        using var msw = new MemoryStream();
+        using var bw = new BinaryWriter(msw);
+        writer.Write(bw, tc, RcByteOrder.LITTLE_ENDIAN, cCompatibility);
 
-        using var msis = new MemoryStream(msout.ToArray());
-        using var bais = new BinaryReader(msis);
-        tc = reader.Read(bais, 6, null);
+        using var msr = new MemoryStream(msw.ToArray());
+        using var br = new BinaryReader(msr);
+        tc = reader.Read(br, 6, null);
         Assert.That(tc.GetNavMesh().GetMaxTiles(), Is.EqualTo(256));
         Assert.That(tc.GetNavMesh().GetParams().maxPolys, Is.EqualTo(16384));
         Assert.That(tc.GetNavMesh().GetParams().tileWidth, Is.EqualTo(14.4f).Within(0.001f));

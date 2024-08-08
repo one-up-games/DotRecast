@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -31,16 +31,19 @@ public class GLCheckerTexture
     {
         _gl = gl;
     }
-    
-    public void Release()
+
+    public unsafe void Release()
     {
         if (m_texId != 0)
         {
-            _gl.DeleteTextures(1, m_texId);
+            fixed (uint* p = &m_texId)
+            {
+                _gl.DeleteTextures(1, p);
+            }
         }
     }
 
-    public void Bind()
+    public unsafe void Bind()
     {
         if (m_texId == 0)
         {
@@ -50,7 +53,11 @@ public class GLCheckerTexture
             uint TSIZE = 64;
             int[] data = new int[TSIZE * TSIZE];
 
-            _gl.GenTextures(1, out m_texId);
+            fixed (uint* p = &m_texId)
+            {
+                _gl.GenTextures(1, p);
+            }
+
             _gl.BindTexture(GLEnum.Texture2D, m_texId);
 
             int level = 0;
@@ -70,8 +77,10 @@ public class GLCheckerTexture
                 level++;
             }
 
-            _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMinFilter, (uint)GLEnum.LinearMipmapNearest);
-            _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMagFilter, (uint)GLEnum.Linear);
+            uint linearMipmapNearest = (uint)GLEnum.LinearMipmapNearest;
+            uint linear = (uint)GLEnum.Linear;
+            _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMinFilter, &linearMipmapNearest);
+            _gl.TexParameterI(GLEnum.Texture2D, GLEnum.TextureMagFilter, &linear);
         }
         else
         {

@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -17,7 +18,6 @@ freely, subject to the following restrictions:
 */
 
 using System.Collections.Generic;
-using DotRecast.Core;
 using DotRecast.Recast;
 using DotRecast.Recast.Geom;
 
@@ -45,40 +45,47 @@ public class TestTiledNavMeshBuilder
     private const int m_tileSize = 32;
 
     public TestTiledNavMeshBuilder() :
-        this(ObjImporter.Load(Loader.ToBytes("dungeon.obj")),
-            PartitionType.WATERSHED, m_cellSize, m_cellHeight, m_agentHeight, m_agentRadius, m_agentMaxClimb, m_agentMaxSlope,
+        this(SimpleInputGeomProvider.LoadFile("dungeon.obj"),
+            RcPartition.WATERSHED, m_cellSize, m_cellHeight, m_agentHeight, m_agentRadius, m_agentMaxClimb, m_agentMaxSlope,
             m_regionMinSize, m_regionMergeSize, m_edgeMaxLen, m_edgeMaxError, m_vertsPerPoly, m_detailSampleDist,
             m_detailSampleMaxError, m_tileSize)
     {
     }
 
-    public TestTiledNavMeshBuilder(IInputGeomProvider m_geom, PartitionType m_partitionType, float m_cellSize, float m_cellHeight,
-        float m_agentHeight, float m_agentRadius, float m_agentMaxClimb, float m_agentMaxSlope, int m_regionMinSize,
-        int m_regionMergeSize, float m_edgeMaxLen, float m_edgeMaxError, int m_vertsPerPoly, float m_detailSampleDist,
-        float m_detailSampleMaxError, int m_tileSize)
+    public TestTiledNavMeshBuilder(IInputGeomProvider geom, RcPartition partitionType, float cellSize, float cellHeight,
+        float agentHeight, float agentRadius, float agentMaxClimb, float agentMaxSlope, int regionMinSize,
+        int regionMergeSize, float edgeMaxLen, float edgeMaxError, int vertsPerPoly, float detailSampleDist,
+        float detailSampleMaxError, int tileSize)
     {
         // Create empty nav mesh
         DtNavMeshParams navMeshParams = new DtNavMeshParams();
-        navMeshParams.orig = m_geom.GetMeshBoundsMin();
-        navMeshParams.tileWidth = m_tileSize * m_cellSize;
-        navMeshParams.tileHeight = m_tileSize * m_cellSize;
+        navMeshParams.orig = geom.GetMeshBoundsMin();
+        navMeshParams.tileWidth = tileSize * cellSize;
+        navMeshParams.tileHeight = tileSize * cellSize;
         navMeshParams.maxTiles = 128;
         navMeshParams.maxPolys = 32768;
-        navMesh = new DtNavMesh(navMeshParams, 6);
+        navMesh = new DtNavMesh();
+        navMesh.Init(navMeshParams, 6);
 
         // Build all tiles
-        RcConfig cfg = new RcConfig(true, m_tileSize, m_tileSize, RcConfig.CalcBorder(m_agentRadius, m_cellSize),
-            m_partitionType, m_cellSize, m_cellHeight, m_agentMaxSlope, true, true, true, m_agentHeight, m_agentRadius,
-            m_agentMaxClimb, m_regionMinArea, m_regionMergeArea, m_edgeMaxLen, m_edgeMaxError, m_vertsPerPoly, true,
-            m_detailSampleDist, m_detailSampleMaxError, SampleAreaModifications.SAMPLE_AREAMOD_GROUND);
-        RecastBuilder rcBuilder = new RecastBuilder();
-        List<RecastBuilderResult> rcResult = rcBuilder.BuildTiles(m_geom, cfg, null);
+        RcConfig cfg = new RcConfig(true, tileSize, tileSize, RcConfig.CalcBorder(agentRadius, cellSize),
+            partitionType,
+            cellSize, cellHeight,
+            agentMaxSlope, agentHeight, agentRadius, agentMaxClimb,
+            m_regionMinArea, m_regionMergeArea,
+            edgeMaxLen, edgeMaxError,
+            vertsPerPoly,
+            detailSampleDist, detailSampleMaxError,
+            true, true, true,
+            SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true);
+        RcBuilder rcBuilder = new RcBuilder();
+        List<RcBuilderResult> rcResult = rcBuilder.BuildTiles(geom, cfg, false, true);
 
         // Add tiles to nav mesh
 
-        foreach (RecastBuilderResult result in rcResult)
+        foreach (RcBuilderResult result in rcResult)
         {
-            RcPolyMesh pmesh = result.GetMesh();
+            RcPolyMesh pmesh = result.Mesh;
             if (pmesh.npolys == 0)
             {
                 continue;
@@ -97,23 +104,23 @@ public class TestTiledNavMeshBuilder
             option.polyFlags = pmesh.flags;
             option.polyCount = pmesh.npolys;
             option.nvp = pmesh.nvp;
-            RcPolyMeshDetail dmesh = result.GetMeshDetail();
+            RcPolyMeshDetail dmesh = result.MeshDetail;
             option.detailMeshes = dmesh.meshes;
             option.detailVerts = dmesh.verts;
             option.detailVertsCount = dmesh.nverts;
             option.detailTris = dmesh.tris;
             option.detailTriCount = dmesh.ntris;
-            option.walkableHeight = m_agentHeight;
-            option.walkableRadius = m_agentRadius;
-            option.walkableClimb = m_agentMaxClimb;
+            option.walkableHeight = agentHeight;
+            option.walkableRadius = agentRadius;
+            option.walkableClimb = agentMaxClimb;
             option.bmin = pmesh.bmin;
             option.bmax = pmesh.bmax;
-            option.cs = m_cellSize;
-            option.ch = m_cellHeight;
-            option.tileX = result.tileX;
-            option.tileZ = result.tileZ;
+            option.cs = cellSize;
+            option.ch = cellHeight;
+            option.tileX = result.TileX;
+            option.tileZ = result.TileZ;
             option.buildBvTree = true;
-            navMesh.AddTile(NavMeshBuilder.CreateNavMeshData(option), 0, 0);
+            navMesh.AddTile(Detour.DtNavMeshBuilder.CreateNavMeshData(option), 0, 0, out _);
         }
     }
 
