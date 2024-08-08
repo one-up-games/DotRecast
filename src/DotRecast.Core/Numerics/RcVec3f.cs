@@ -18,11 +18,12 @@ freely, subject to the following restrictions:
 */
 
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace DotRecast.Core.Numerics
 {
-    public struct RcVec3f
+    public unsafe struct RcVec3f
     {
         public float X;
         public float Y;
@@ -269,6 +270,18 @@ namespace DotRecast.Core.Numerics
                 v.Y *= d,
                 v.Z *= d
             );
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe implicit operator Vector3(RcVec3f vec3f)
+        {
+            return *(Vector3*)&vec3f;
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe implicit operator RcVec3f(Vector3 vec3)
+        {
+            return *(RcVec3f*)&vec3;
         }
     }
 }
