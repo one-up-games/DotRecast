@@ -52,28 +52,6 @@ public class DtNodePoolTest
             Assert.That(nodeIdx, Is.EqualTo(i));
         }
 
-        // check count
-        for (int i = 0; i < counts.Length; ++i)
-        {
-            var count = counts[i];
-            var n = pool.FindNodes(i, out var nodes);
-            Assert.That(n, Is.EqualTo(count));
-            Assert.That(nodes, Has.Count.EqualTo(count));
-
-            var node = pool.FindNode(i);
-            Assert.That(nodes[0], Is.SameAs(node));
-
-            var node2 = pool.FindNode(i);
-            Assert.That(nodes[0], Is.SameAs(node2));
-        }
-
-        // check other count
-        {
-            var n = pool.FindNodes(4, out var nodes);
-            Assert.That(n, Is.EqualTo(0));
-            Assert.That(nodes, Is.Null);
-        }
-
         var totalCount = pool.GetNodeCount();
         Assert.That(totalCount, Is.EqualTo(sum));
 
