@@ -29,7 +29,6 @@ namespace DotRecast.Detour
 
         private int m_nodeCount;
         private readonly List<DtNode> m_nodes;
-        private List<DtNode> _realNodesPool = new List<DtNode>();
 
         public DtNodePool()
         {
