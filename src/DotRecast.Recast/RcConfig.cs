@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22,168 +22,170 @@ using System;
 
 namespace DotRecast.Recast
 {
+    /// Specifies a configuration to use when performing Recast builds.
+    /// @ingroup recast
     public class RcConfig
     {
-        public PartitionType partitionType;
+        public readonly int Partition;
 
-        public bool useTiles;
+        public readonly bool UseTiles;
 
         /** The width/depth size of tile's on the xz-plane. [Limit: &gt;= 0] [Units: vx] **/
-        public int tileSizeX;
+        public readonly int TileSizeX;
 
-        public int tileSizeZ;
+        public readonly int TileSizeZ;
 
         /** The xz-plane cell size to use for fields. [Limit: &gt; 0] [Units: wu] **/
-        public float cs;
+        public readonly float Cs;
 
         /** The y-axis cell size to use for fields. [Limit: &gt; 0] [Units: wu] **/
-        public float ch;
+        public readonly float Ch;
 
         /** The maximum slope that is considered walkable. [Limits: 0 &lt;= value &lt; 90] [Units: Degrees] **/
-        public float walkableSlopeAngle;
+        public readonly float WalkableSlopeAngle;
 
         /**
-     * Minimum floor to 'ceiling' height that will still allow the floor area to be considered walkable. [Limit: &gt;= 3]
-     * [Units: vx]
-     **/
-        public int walkableHeight;
+         * Minimum floor to 'ceiling' height that will still allow the floor area to be considered walkable. [Limit: &gt;= 3]
+         * [Units: vx]
+         **/
+        public readonly int WalkableHeight;
 
         /** Maximum ledge height that is considered to still be traversable. [Limit: &gt;=0] [Units: vx] **/
-        public int walkableClimb;
+        public readonly int WalkableClimb;
 
         /**
-     * The distance to erode/shrink the walkable area of the heightfield away from obstructions. [Limit: &gt;=0] [Units:
-     * vx]
-     **/
-        public int walkableRadius;
+         * The distance to erode/shrink the walkable area of the heightfield away from obstructions. [Limit: &gt;=0] [Units:
+         * vx]
+         **/
+        public readonly int WalkableRadius;
 
         /** The maximum allowed length for contour edges along the border of the mesh. [Limit: &gt;=0] [Units: vx] **/
-        public int maxEdgeLen;
+        public readonly int MaxEdgeLen;
 
         /**
-     * The maximum distance a simplfied contour's border edges should deviate the original raw contour. [Limit: &gt;=0]
-     * [Units: vx]
-     **/
-        public float maxSimplificationError;
+         * The maximum distance a simplfied contour's border edges should deviate the original raw contour. [Limit: &gt;=0]
+         * [Units: vx]
+         **/
+        public readonly float MaxSimplificationError;
 
         /** The minimum number of cells allowed to form isolated island areas. [Limit: &gt;=0] [Units: vx] **/
-        public int minRegionArea;
+        public readonly int MinRegionArea;
 
         /**
-     * Any regions with a span count smaller than this value will, if possible, be merged with larger regions. [Limit:
-     * &gt;=0] [Units: vx]
-     **/
-        public int mergeRegionArea;
+         * Any regions with a span count smaller than this value will, if possible, be merged with larger regions. [Limit:&gt;=0] [Units: vx]
+         **/
+        public readonly int MergeRegionArea;
 
         /**
-     * The maximum number of vertices allowed for polygons generated during the contour to polygon conversion process.
-     * [Limit: &gt;= 3]
-     **/
-        public int maxVertsPerPoly;
+         * The maximum number of vertices allowed for polygons generated during the contour to polygon conversion process.
+         * [Limit: &gt;= 3]
+         **/
+        public readonly int MaxVertsPerPoly;
 
         /**
-     * Sets the sampling distance to use when generating the detail mesh. (For height detail only.) [Limits: 0 or >=
-     * 0.9] [Units: wu]
-     **/
-        public float detailSampleDist;
+         * Sets the sampling distance to use when generating the detail mesh. (For height detail only.) [Limits: 0 or >= 0.9] [Units: wu]
+         **/
+        public readonly float DetailSampleDist;
 
         /**
-     * The maximum distance the detail mesh surface should deviate from heightfield data. (For height detail only.)
-     * [Limit: &gt;=0] [Units: wu]
-     **/
-        public float detailSampleMaxError;
+         * The maximum distance the detail mesh surface should deviate from heightfield data. (For height detail only.)
+         * [Limit: &gt;=0] [Units: wu]
+         **/
+        public readonly float DetailSampleMaxError;
 
-        public AreaModification walkableAreaMod;
-        public bool filterLowHangingObstacles;
-        public bool filterLedgeSpans;
-        public bool filterWalkableLowHeightSpans;
+        public readonly RcAreaModification WalkableAreaMod;
+        public readonly bool FilterLowHangingObstacles;
+        public readonly bool FilterLedgeSpans;
+        public readonly bool FilterWalkableLowHeightSpans;
 
         /** Set to false to disable building detailed mesh **/
-        public bool buildMeshDetail;
+        public readonly bool BuildMeshDetail;
 
         /** The size of the non-navigable border around the heightfield. [Limit: &gt;=0] [Units: vx] **/
-        public int borderSize;
+        public readonly int BorderSize;
 
         /** Set of original settings passed in world units */
-        public float minRegionAreaWorld;
+        public readonly float MinRegionAreaWorld;
 
-        public float mergeRegionAreaWorld;
-        public float walkableHeightWorld;
-        public float walkableClimbWorld;
-        public float walkableRadiusWorld;
-        public float maxEdgeLenWorld;
-
-        public RcConfig()
-        {
-        }
+        public readonly float MergeRegionAreaWorld;
+        public readonly float WalkableHeightWorld;
+        public readonly float WalkableClimbWorld;
+        public readonly float WalkableRadiusWorld;
+        public readonly float MaxEdgeLenWorld;
 
         /**
-     * Non-tiled build configuration
-     */
-        public RcConfig(PartitionType partitionType, float cellSize, float cellHeight, float agentHeight, float agentRadius,
-            float agentMaxClimb, float agentMaxSlope, int regionMinSize, int regionMergeSize, float edgeMaxLen,
-            float edgeMaxError, int vertsPerPoly, float detailSampleDist, float detailSampleMaxError,
-            AreaModification walkableAreaMod) : this(partitionType, cellSize, cellHeight, agentMaxSlope, true, true, true, agentHeight, agentRadius, agentMaxClimb,
-            regionMinSize, regionMergeSize, edgeMaxLen, edgeMaxError, vertsPerPoly, detailSampleDist, detailSampleMaxError,
-            walkableAreaMod, true)
-        {
-        }
-
-        /**
-     * Non-tiled build configuration
-     */
-        public RcConfig(PartitionType partitionType, float cellSize, float cellHeight, float agentMaxSlope,
-            bool filterLowHangingObstacles, bool filterLedgeSpans, bool filterWalkableLowHeightSpans, float agentHeight,
-            float agentRadius, float agentMaxClimb, int regionMinSize, int regionMergeSize, float edgeMaxLen, float edgeMaxError,
-            int vertsPerPoly, float detailSampleDist, float detailSampleMaxError, AreaModification walkableAreaMod,
-            bool buildMeshDetail) : this(false, 0, 0, 0, partitionType, cellSize, cellHeight, agentMaxSlope, filterLowHangingObstacles, filterLedgeSpans,
-            filterWalkableLowHeightSpans, agentHeight, agentRadius, agentMaxClimb,
-            regionMinSize * regionMinSize * cellSize * cellSize, regionMergeSize * regionMergeSize * cellSize * cellSize,
-            edgeMaxLen, edgeMaxError, vertsPerPoly, buildMeshDetail, detailSampleDist, detailSampleMaxError, walkableAreaMod)
+         * Non-tiled build configuration
+         */
+        public RcConfig(
+            RcPartition partitionType,
+            float cellSize, float cellHeight,
+            float agentMaxSlope, float agentHeight, float agentRadius, float agentMaxClimb,
+            int regionMinSize, int regionMergeSize,
+            float edgeMaxLen, float edgeMaxError,
+            int vertsPerPoly,
+            float detailSampleDist, float detailSampleMaxError,
+            bool filterLowHangingObstacles, bool filterLedgeSpans, bool filterWalkableLowHeightSpans,
+            RcAreaModification walkableAreaMod, bool buildMeshDetail)
+            : this(false, 0, 0, 0,
+                partitionType,
+                cellSize, cellHeight,
+                agentMaxSlope, agentHeight, agentRadius, agentMaxClimb,
+                regionMinSize * regionMinSize * cellSize * cellSize, regionMergeSize * regionMergeSize * cellSize * cellSize,
+                edgeMaxLen, edgeMaxError,
+                vertsPerPoly,
+                detailSampleDist, detailSampleMaxError,
+                filterLowHangingObstacles, filterLedgeSpans, filterWalkableLowHeightSpans,
+                walkableAreaMod, buildMeshDetail)
         {
             // Note: area = size*size in [Units: wu]
         }
 
-        public RcConfig(bool useTiles, int tileSizeX, int tileSizeZ, int borderSize, PartitionType partitionType,
-            float cellSize, float cellHeight, float agentMaxSlope, bool filterLowHangingObstacles, bool filterLedgeSpans,
-            bool filterWalkableLowHeightSpans, float agentHeight, float agentRadius, float agentMaxClimb, float minRegionArea,
-            float mergeRegionArea, float edgeMaxLen, float edgeMaxError, int vertsPerPoly, bool buildMeshDetail,
-            float detailSampleDist, float detailSampleMaxError, AreaModification walkableAreaMod)
+        public RcConfig(
+            bool useTiles, int tileSizeX, int tileSizeZ,
+            int borderSize,
+            RcPartition partition,
+            float cellSize, float cellHeight,
+            float agentMaxSlope, float agentHeight, float agentRadius, float agentMaxClimb,
+            float minRegionArea, float mergeRegionArea,
+            float edgeMaxLen, float edgeMaxError, int vertsPerPoly,
+            float detailSampleDist, float detailSampleMaxError,
+            bool filterLowHangingObstacles, bool filterLedgeSpans, bool filterWalkableLowHeightSpans,
+            RcAreaModification walkableAreaMod, bool buildMeshDetail)
         {
-            this.useTiles = useTiles;
-            this.tileSizeX = tileSizeX;
-            this.tileSizeZ = tileSizeZ;
-            this.borderSize = borderSize;
-            this.partitionType = partitionType;
-            cs = cellSize;
-            ch = cellHeight;
-            walkableSlopeAngle = agentMaxSlope;
-            walkableHeight = (int)Math.Ceiling(agentHeight / ch);
-            walkableHeightWorld = agentHeight;
-            walkableClimb = (int)Math.Floor(agentMaxClimb / ch);
-            walkableClimbWorld = agentMaxClimb;
-            walkableRadius = (int)Math.Ceiling(agentRadius / cs);
-            walkableRadiusWorld = agentRadius;
-            this.minRegionArea = (int)Math.Round(minRegionArea / (cs * cs));
-            minRegionAreaWorld = minRegionArea;
-            this.mergeRegionArea = (int)Math.Round(mergeRegionArea / (cs * cs));
-            mergeRegionAreaWorld = mergeRegionArea;
-            maxEdgeLen = (int)(edgeMaxLen / cellSize);
-            maxEdgeLenWorld = edgeMaxLen;
-            maxSimplificationError = edgeMaxError;
-            maxVertsPerPoly = vertsPerPoly;
-            this.detailSampleDist = detailSampleDist < 0.9f ? 0 : cellSize * detailSampleDist;
-            this.detailSampleMaxError = cellHeight * detailSampleMaxError;
-            this.walkableAreaMod = walkableAreaMod;
-            this.filterLowHangingObstacles = filterLowHangingObstacles;
-            this.filterLedgeSpans = filterLedgeSpans;
-            this.filterWalkableLowHeightSpans = filterWalkableLowHeightSpans;
-            this.buildMeshDetail = buildMeshDetail;
+            UseTiles = useTiles;
+            TileSizeX = tileSizeX;
+            TileSizeZ = tileSizeZ;
+            BorderSize = borderSize;
+            Partition = RcPartitionType.Of(partition).Value;
+            Cs = cellSize;
+            Ch = cellHeight;
+            WalkableSlopeAngle = agentMaxSlope;
+            WalkableHeight = (int)MathF.Ceiling(agentHeight / Ch);
+            WalkableHeightWorld = agentHeight;
+            WalkableClimb = (int)MathF.Floor(agentMaxClimb / Ch);
+            WalkableClimbWorld = agentMaxClimb;
+            WalkableRadius = (int)MathF.Ceiling(agentRadius / Cs);
+            WalkableRadiusWorld = agentRadius;
+            MinRegionArea = (int)MathF.Round(minRegionArea / (Cs * Cs));
+            MinRegionAreaWorld = minRegionArea;
+            MergeRegionArea = (int)MathF.Round(mergeRegionArea / (Cs * Cs));
+            MergeRegionAreaWorld = mergeRegionArea;
+            MaxEdgeLen = (int)(edgeMaxLen / cellSize);
+            MaxEdgeLenWorld = edgeMaxLen;
+            MaxSimplificationError = edgeMaxError;
+            MaxVertsPerPoly = vertsPerPoly;
+            DetailSampleDist = detailSampleDist < 0.9f ? 0 : cellSize * detailSampleDist;
+            DetailSampleMaxError = cellHeight * detailSampleMaxError;
+            WalkableAreaMod = walkableAreaMod;
+            FilterLowHangingObstacles = filterLowHangingObstacles;
+            FilterLedgeSpans = filterLedgeSpans;
+            FilterWalkableLowHeightSpans = filterWalkableLowHeightSpans;
+            BuildMeshDetail = buildMeshDetail;
         }
 
         public static int CalcBorder(float agentRadius, float cs)
         {
-            return 3 + (int)Math.Ceiling(agentRadius / cs);
+            return 3 + (int)MathF.Ceiling(agentRadius / cs);
         }
     }
 }

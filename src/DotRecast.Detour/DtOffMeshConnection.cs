@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,35 +18,32 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+using DotRecast.Core.Numerics;
+
 namespace DotRecast.Detour
 {
-    /**
- * Defines an navigation mesh off-mesh connection within a dtMeshTile object. An off-mesh connection is a user defined
- * traversable connection made up to two vertices.
- */
+    /// Defines an navigation mesh off-mesh connection within a dtMeshTile object.
+    /// An off-mesh connection is a user defined traversable connection made up to two vertices.
     public class DtOffMeshConnection
     {
-        /** The endpoints of the connection. [(ax, ay, az, bx, by, bz)] */
-        public float[] pos = new float[6];
+        /// The endpoints of the connection. [(ax, ay, az, bx, by, bz)]
+        public RcVec3f[] pos = new RcVec3f[2];
 
-        /** The radius of the endpoints. [Limit: >= 0] */
+        /// The radius of the endpoints. [Limit: >= 0]
         public float rad;
 
-        /** The polygon reference of the connection within the tile. */
+        /// The polygon reference of the connection within the tile.
         public int poly;
 
-        /**
-     * Link flags.
-     *
-     * @note These are not the connection's user defined flags. Those are assigned via the connection's Poly definition.
-     *       These are link flags used for internal purposes.
-     */
+        /// Link flags. 
+        /// @note These are not the connection's user defined flags. Those are assigned via the 
+        /// connection's dtPoly definition. These are link flags used for internal purposes.
         public int flags;
 
-        /** End point side. */
+        /// End point side.
         public int side;
 
-        /** The id of the offmesh connection. (User assigned when the navigation mesh is built.) */
+        /// The id of the offmesh connection. (User assigned when the navigation mesh is built.)
         public int userId;
     }
 }

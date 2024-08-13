@@ -1,5 +1,6 @@
 /*
 recast4j copyright (c) 2021 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,23 +19,24 @@ freely, subject to the following restrictions:
 
 using System.IO;
 using DotRecast.Core;
+using DotRecast.Core.Numerics;
 using DotRecast.Detour.Dynamic.Io;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Dynamic.Test.Io;
 
-[Parallelizable]
+
 public class VoxelFileReaderWriterTest
 {
     [TestCase(false)]
     [TestCase(true)]
     public void ShouldReadSingleTileFile(bool compression)
     {
-        byte[] bytes = Loader.ToBytes("test.voxels");
+        byte[] bytes = RcIO.ReadFileIfFound("test.voxels");
         using var ms = new MemoryStream(bytes);
-        using var bis = new BinaryReader(ms);
+        using var br = new BinaryReader(ms);
 
-        VoxelFile f = ReadWriteRead(bis, compression);
+        DtVoxelFile f = ReadWriteRead(br, compression);
         Assert.That(f.useTiles, Is.False);
         Assert.That(f.bounds, Is.EqualTo(new[] { -100.0f, 0f, -100f, 100f, 5f, 100f }));
         Assert.That(f.cellSize, Is.EqualTo(0.25f));
@@ -50,19 +52,19 @@ public class VoxelFileReaderWriterTest
         Assert.That(f.tiles[0].width, Is.EqualTo(810));
         Assert.That(f.tiles[0].depth, Is.EqualTo(810));
         Assert.That(f.tiles[0].spanData.Length, Is.EqualTo(9021024));
-        Assert.That(f.tiles[0].boundsMin, Is.EqualTo(RcVec3f.Of(-101.25f, 0f, -101.25f)));
-        Assert.That(f.tiles[0].boundsMax, Is.EqualTo(RcVec3f.Of(101.25f, 5.0f, 101.25f)));
+        Assert.That(f.tiles[0].boundsMin, Is.EqualTo(new RcVec3f(-101.25f, 0f, -101.25f)));
+        Assert.That(f.tiles[0].boundsMax, Is.EqualTo(new RcVec3f(101.25f, 5.0f, 101.25f)));
     }
 
     [TestCase(false)]
     [TestCase(true)]
     public void ShouldReadMultiTileFile(bool compression)
     {
-        byte[] bytes = Loader.ToBytes("test_tiles.voxels");
+        byte[] bytes = RcIO.ReadFileIfFound("test_tiles.voxels");
         using var ms = new MemoryStream(bytes);
-        using var bis = new BinaryReader(ms);
+        using var br = new BinaryReader(ms);
 
-        VoxelFile f = ReadWriteRead(bis, compression);
+        DtVoxelFile f = ReadWriteRead(br, compression);
 
         Assert.That(f.useTiles, Is.True);
         Assert.That(f.bounds, Is.EqualTo(new[] { -100.0f, 0f, -100f, 100f, 5f, 100f }));
@@ -81,22 +83,22 @@ public class VoxelFileReaderWriterTest
         Assert.That(f.tiles[0].spanData.Length, Is.EqualTo(104952));
         Assert.That(f.tiles[5].spanData.Length, Is.EqualTo(109080));
         Assert.That(f.tiles[18].spanData.Length, Is.EqualTo(113400));
-        Assert.That(f.tiles[0].boundsMin, Is.EqualTo(RcVec3f.Of(-101.25f, 0f, -101.25f)));
-        Assert.That(f.tiles[0].boundsMax, Is.EqualTo(RcVec3f.Of(-78.75f, 5.0f, -78.75f)));
+        Assert.That(f.tiles[0].boundsMin, Is.EqualTo(new RcVec3f(-101.25f, 0f, -101.25f)));
+        Assert.That(f.tiles[0].boundsMax, Is.EqualTo(new RcVec3f(-78.75f, 5.0f, -78.75f)));
     }
 
-    private VoxelFile ReadWriteRead(BinaryReader bis, bool compression)
+    private DtVoxelFile ReadWriteRead(BinaryReader bis, bool compression)
     {
-        VoxelFileReader reader = new VoxelFileReader();
-        VoxelFile f = reader.Read(bis);
+        DtVoxelFileReader reader = new DtVoxelFileReader(DtVoxelTileLZ4ForTestCompressor.Shared);
+        DtVoxelFile f = reader.Read(bis);
 
-        using var msOut = new MemoryStream();
-        using var bwOut = new BinaryWriter(msOut);
-        VoxelFileWriter writer = new VoxelFileWriter();
-        writer.Write(bwOut, f, compression);
+        using var msw = new MemoryStream();
+        using var bw = new BinaryWriter(msw);
+        DtVoxelFileWriter writer = new DtVoxelFileWriter(DtVoxelTileLZ4ForTestCompressor.Shared);
+        writer.Write(bw, f, compression);
 
-        using var msIn = new MemoryStream(msOut.ToArray());
-        using var brIn = new BinaryReader(msIn);
-        return reader.Read(brIn);
+        using var msr = new MemoryStream(msw.ToArray());
+        using var br = new BinaryReader(msr);
+        return reader.Read(br);
     }
 }

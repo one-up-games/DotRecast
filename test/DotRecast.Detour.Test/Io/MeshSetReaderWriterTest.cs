@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -19,15 +20,15 @@ freely, subject to the following restrictions:
 using System.Collections.Generic;
 using System.IO;
 using DotRecast.Core;
+using DotRecast.Core.Numerics;
 using DotRecast.Detour.Io;
 using DotRecast.Recast;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
-using static DotRecast.Core.RcMath;
+
 
 namespace DotRecast.Detour.Test.Io;
 
-[Parallelizable]
 public class MeshSetReaderWriterTest
 {
     private readonly DtMeshSetWriter writer = new DtMeshSetWriter();
@@ -54,7 +55,7 @@ public class MeshSetReaderWriterTest
     [Test]
     public void Test()
     {
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("dungeon.obj"));
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("dungeon.obj");
 
         NavMeshSetHeader header = new NavMeshSetHeader();
         header.magic = NavMeshSetHeader.NAVMESHSET_MAGIC;
@@ -65,55 +66,70 @@ public class MeshSetReaderWriterTest
         header.option.maxTiles = m_maxTiles;
         header.option.maxPolys = m_maxPolysPerTile;
         header.numTiles = 0;
-        DtNavMesh mesh = new DtNavMesh(header.option, 6);
+        DtNavMesh mesh = new DtNavMesh();
+        mesh.Init(header.option, 6);
 
         RcVec3f bmin = geom.GetMeshBoundsMin();
         RcVec3f bmax = geom.GetMeshBoundsMax();
-        Recast.Recast.CalcTileCount(bmin, bmax, m_cellSize, m_tileSize, m_tileSize, out var tw, out var th);
+        RcRecast.CalcTileCount(bmin, bmax, m_cellSize, m_tileSize, m_tileSize, out var tw, out var th);
         for (int y = 0; y < th; ++y)
         {
             for (int x = 0; x < tw; ++x)
             {
                 RcConfig cfg = new RcConfig(true, m_tileSize, m_tileSize,
-                    RcConfig.CalcBorder(m_agentRadius, m_cellSize), PartitionType.WATERSHED, m_cellSize, m_cellHeight,
-                    m_agentMaxSlope, true, true, true, m_agentHeight, m_agentRadius, m_agentMaxClimb, m_regionMinArea,
-                    m_regionMergeArea, m_edgeMaxLen, m_edgeMaxError, m_vertsPerPoly, true, m_detailSampleDist,
-                    m_detailSampleMaxError, SampleAreaModifications.SAMPLE_AREAMOD_GROUND);
-                RecastBuilderConfig bcfg = new RecastBuilderConfig(cfg, bmin, bmax, x, y);
+                    RcConfig.CalcBorder(m_agentRadius, m_cellSize),
+                    RcPartition.WATERSHED,
+                    m_cellSize, m_cellHeight,
+                    m_agentMaxSlope, m_agentHeight, m_agentRadius, m_agentMaxClimb,
+                    m_regionMinArea, m_regionMergeArea,
+                    m_edgeMaxLen, m_edgeMaxError,
+                    m_vertsPerPoly,
+                    m_detailSampleDist, m_detailSampleMaxError,
+                    true, true, true,
+                    SampleAreaModifications.SAMPLE_AREAMOD_GROUND, true);
+                RcBuilderConfig bcfg = new RcBuilderConfig(cfg, bmin, bmax, x, y);
                 TestDetourBuilder db = new TestDetourBuilder();
                 DtMeshData data = db.Build(geom, bcfg, m_agentHeight, m_agentRadius, m_agentMaxClimb, x, y, true);
                 if (data != null)
                 {
                     mesh.RemoveTile(mesh.GetTileRefAt(x, y, 0));
-                    mesh.AddTile(data, 0, 0);
+                    mesh.AddTile(data, 0, 0, out _);
                 }
             }
         }
 
         using var ms = new MemoryStream();
-        using var os = new BinaryWriter(ms);
-        writer.Write(os, mesh, RcByteOrder.LITTLE_ENDIAN, true);
+        using var bw = new BinaryWriter(ms);
+        writer.Write(bw, mesh, RcByteOrder.LITTLE_ENDIAN, true);
         ms.Seek(0, SeekOrigin.Begin);
 
-        using var @is = new BinaryReader(ms);
-        mesh = reader.Read(@is, 6);
+        using var br = new BinaryReader(ms);
+        mesh = reader.Read(br, 6);
         Assert.That(mesh.GetMaxTiles(), Is.EqualTo(128));
         Assert.That(mesh.GetParams().maxPolys, Is.EqualTo(0x8000));
         Assert.That(mesh.GetParams().tileWidth, Is.EqualTo(9.6f).Within(0.001f));
-        List<DtMeshTile> tiles = mesh.GetTilesAt(6, 9);
-        Assert.That(tiles.Count, Is.EqualTo(1));
+
+        const int MAX_NEIS = 32;
+        DtMeshTile[] tiles = new DtMeshTile[MAX_NEIS];
+        int nneis = 0;
+
+        nneis = mesh.GetTilesAt(6, 9, tiles, MAX_NEIS);
+        Assert.That(nneis, Is.EqualTo(1));
         Assert.That(tiles[0].data.polys.Length, Is.EqualTo(2));
         Assert.That(tiles[0].data.verts.Length, Is.EqualTo(7 * 3));
-        tiles = mesh.GetTilesAt(2, 9);
-        Assert.That(tiles.Count, Is.EqualTo(1));
+
+        nneis = mesh.GetTilesAt(2, 9, tiles, MAX_NEIS);
+        Assert.That(nneis, Is.EqualTo(1));
         Assert.That(tiles[0].data.polys.Length, Is.EqualTo(2));
         Assert.That(tiles[0].data.verts.Length, Is.EqualTo(9 * 3));
-        tiles = mesh.GetTilesAt(4, 3);
-        Assert.That(tiles.Count, Is.EqualTo(1));
+
+        nneis = mesh.GetTilesAt(4, 3, tiles, MAX_NEIS);
+        Assert.That(nneis, Is.EqualTo(1));
         Assert.That(tiles[0].data.polys.Length, Is.EqualTo(3));
         Assert.That(tiles[0].data.verts.Length, Is.EqualTo(6 * 3));
-        tiles = mesh.GetTilesAt(2, 8);
-        Assert.That(tiles.Count, Is.EqualTo(1));
+
+        nneis = mesh.GetTilesAt(2, 8, tiles, MAX_NEIS);
+        Assert.That(nneis, Is.EqualTo(1));
         Assert.That(tiles[0].data.polys.Length, Is.EqualTo(5));
         Assert.That(tiles[0].data.verts.Length, Is.EqualTo(17 * 3));
     }

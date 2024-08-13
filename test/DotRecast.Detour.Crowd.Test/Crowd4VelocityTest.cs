@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22,7 +22,7 @@ using NUnit.Framework;
 
 namespace DotRecast.Detour.Crowd.Test;
 
-[Parallelizable]
+
 public class Crowd4VelocityTest : AbstractCrowdTest
 {
     static readonly float[][] EXPECTED_A1Q3TVTA =
@@ -99,8 +99,10 @@ public class Crowd4VelocityTest : AbstractCrowdTest
     [Test]
     public void TestAgent1Quality3TVTA()
     {
-        int updateFlags = DtCrowdAgentParams.DT_CROWD_ANTICIPATE_TURNS | DtCrowdAgentParams.DT_CROWD_OPTIMIZE_VIS
-                                                                       | DtCrowdAgentParams.DT_CROWD_OPTIMIZE_TOPO | DtCrowdAgentParams.DT_CROWD_OBSTACLE_AVOIDANCE;
+        int updateFlags = DtCrowdAgentUpdateFlags.DT_CROWD_ANTICIPATE_TURNS |
+                          DtCrowdAgentUpdateFlags.DT_CROWD_OPTIMIZE_VIS |
+                          DtCrowdAgentUpdateFlags.DT_CROWD_OPTIMIZE_TOPO |
+                          DtCrowdAgentUpdateFlags.DT_CROWD_OBSTACLE_AVOIDANCE;
 
         AddAgentGrid(2, 0.3f, updateFlags, 3, endPoss[0]);
         SetMoveTarget(endPoss[4], false);
@@ -113,12 +115,12 @@ public class Crowd4VelocityTest : AbstractCrowdTest
             }
 
             DtCrowdAgent ag = agents[1];
-            Assert.That(ag.npos.x, Is.EqualTo(EXPECTED_A1Q3TVTA[i][0]).Within(0.001f));
-            Assert.That(ag.npos.y, Is.EqualTo(EXPECTED_A1Q3TVTA[i][1]).Within(0.001f));
-            Assert.That(ag.npos.z, Is.EqualTo(EXPECTED_A1Q3TVTA[i][2]).Within(0.001f));
-            Assert.That(ag.nvel.x, Is.EqualTo(EXPECTED_A1Q3TVTA[i][3]).Within(0.001f));
-            Assert.That(ag.nvel.y, Is.EqualTo(EXPECTED_A1Q3TVTA[i][4]).Within(0.001f));
-            Assert.That(ag.nvel.z, Is.EqualTo(EXPECTED_A1Q3TVTA[i][5]).Within(0.001f));
+            Assert.That(ag.npos.X, Is.EqualTo(EXPECTED_A1Q3TVTA[i][0]).Within(0.001f));
+            Assert.That(ag.npos.Y, Is.EqualTo(EXPECTED_A1Q3TVTA[i][1]).Within(0.001f));
+            Assert.That(ag.npos.Z, Is.EqualTo(EXPECTED_A1Q3TVTA[i][2]).Within(0.001f));
+            Assert.That(ag.nvel.X, Is.EqualTo(EXPECTED_A1Q3TVTA[i][3]).Within(0.001f));
+            Assert.That(ag.nvel.Y, Is.EqualTo(EXPECTED_A1Q3TVTA[i][4]).Within(0.001f));
+            Assert.That(ag.nvel.Z, Is.EqualTo(EXPECTED_A1Q3TVTA[i][5]).Within(0.001f));
         }
     }
 }

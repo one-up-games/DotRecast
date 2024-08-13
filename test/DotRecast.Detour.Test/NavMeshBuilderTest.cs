@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,11 +17,13 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
+using static DtDetour;
+
 public class NavMeshBuilderTest
 {
     private DtMeshData nmd;
@@ -28,7 +31,7 @@ public class NavMeshBuilderTest
     [SetUp]
     public void SetUp()
     {
-        nmd = new RecastTestMeshBuilder().GetMeshData();
+        nmd = TestMeshDataFactory.Create();
     }
 
     [Test]
@@ -49,14 +52,14 @@ public class NavMeshBuilderTest
             Assert.That(nmd.bvTree[i], Is.Not.Null);
         }
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 2; i++)
         {
-            Assert.That(nmd.verts[223 * 3 + i], Is.EqualTo(nmd.offMeshCons[0].pos[i]));
+            Assert.That(RcVec.Create(nmd.verts, 223 * 3 + (i * 3)), Is.EqualTo(nmd.offMeshCons[0].pos[i]));
         }
 
         Assert.That(nmd.offMeshCons[0].rad, Is.EqualTo(0.1f));
         Assert.That(nmd.offMeshCons[0].poly, Is.EqualTo(118));
-        Assert.That(nmd.offMeshCons[0].flags, Is.EqualTo(DtNavMesh.DT_OFFMESH_CON_BIDIR));
+        Assert.That(nmd.offMeshCons[0].flags, Is.EqualTo(DT_OFFMESH_CON_BIDIR));
         Assert.That(nmd.offMeshCons[0].side, Is.EqualTo(0xFF));
         Assert.That(nmd.offMeshCons[0].userId, Is.EqualTo(0x4567));
         Assert.That(nmd.polys[118].vertCount, Is.EqualTo(2));
@@ -64,6 +67,6 @@ public class NavMeshBuilderTest
         Assert.That(nmd.polys[118].verts[1], Is.EqualTo(224));
         Assert.That(nmd.polys[118].flags, Is.EqualTo(12));
         Assert.That(nmd.polys[118].GetArea(), Is.EqualTo(2));
-        Assert.That(nmd.polys[118].GetPolyType(), Is.EqualTo(DtPoly.DT_POLYTYPE_OFFMESH_CONNECTION));
+        Assert.That(nmd.polys[118].GetPolyType(), Is.EqualTo(DtPolyTypes.DT_POLYTYPE_OFFMESH_CONNECTION));
     }
 }

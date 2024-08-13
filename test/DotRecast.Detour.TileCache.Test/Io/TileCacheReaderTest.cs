@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -22,21 +22,22 @@ using System;
 using System.IO;
 using DotRecast.Core;
 using DotRecast.Detour.TileCache.Io;
+using DotRecast.Detour.TileCache.Io.Compress;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.TileCache.Test.Io;
 
-[Parallelizable]
+
 public class TileCacheReaderTest
 {
-    private readonly DtTileCacheReader reader = new DtTileCacheReader();
+    private readonly DtTileCacheReader reader = new DtTileCacheReader(DtTileCacheCompressorFactory.Shared);
 
     [Test]
     public void TestNavmesh()
     {
-        using var ms = new MemoryStream(Loader.ToBytes("all_tiles_tilecache.bin"));
-        using var @is = new BinaryReader(ms);
-        DtTileCache tc = reader.Read(@is, 6, null);
+        using var ms = new MemoryStream(RcIO.ReadFileIfFound("all_tiles_tilecache.bin"));
+        using var br = new BinaryReader(ms);
+        DtTileCache tc = reader.Read(br, 6, null);
         Assert.That(tc.GetNavMesh().GetMaxTiles(), Is.EqualTo(256));
         Assert.That(tc.GetNavMesh().GetParams().maxPolys, Is.EqualTo(16384));
         Assert.That(tc.GetNavMesh().GetParams().tileWidth, Is.EqualTo(14.4f).Within(0.001f));
@@ -132,9 +133,9 @@ public class TileCacheReaderTest
     [Test]
     public void TestDungeon()
     {
-        using var ms = new MemoryStream(Loader.ToBytes("dungeon_all_tiles_tilecache.bin"));
-        using var @is = new BinaryReader(ms);
-        DtTileCache tc = reader.Read(@is, 6, null);
+        using var ms = new MemoryStream(RcIO.ReadFileIfFound("dungeon_all_tiles_tilecache.bin"));
+        using var br = new BinaryReader(ms);
+        DtTileCache tc = reader.Read(br, 6, null);
         Assert.That(tc.GetNavMesh().GetMaxTiles(), Is.EqualTo(256));
         Assert.That(tc.GetNavMesh().GetParams().maxPolys, Is.EqualTo(16384));
         Assert.That(tc.GetNavMesh().GetParams().tileWidth, Is.EqualTo(14.4f).Within(0.001f));

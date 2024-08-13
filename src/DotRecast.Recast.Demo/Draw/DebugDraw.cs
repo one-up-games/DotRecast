@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -19,27 +19,16 @@ freely, subject to the following restrictions:
 */
 
 using System;
-using DotRecast.Core;
-using DotRecast.Recast.DemoTool.Builder;
 using Silk.NET.OpenGL;
+using DotRecast.Core.Numerics;
+using DotRecast.Recast.Toolset.Builder;
 
 namespace DotRecast.Recast.Demo.Draw;
 
 public class DebugDraw
 {
     private readonly GLCheckerTexture g_tex;
-    private readonly IOpenGLDraw openGlDraw;
-    private readonly int[] boxIndices = { 7, 6, 5, 4, 0, 1, 2, 3, 1, 5, 6, 2, 3, 7, 4, 0, 2, 6, 7, 3, 0, 4, 5, 1, };
-
-    private readonly float[][] frustumPlanes = RcArrayUtils.Of<float>(6, 4);
-    // {
-    //     new[] { 0f, 0f, 0f, 0f },
-    //     new[] { 0f, 0f, 0f, 0f },
-    //     new[] { 0f, 0f, 0f, 0f },
-    //     new[] { 0f, 0f, 0f, 0f },
-    //     new[] { 0f, 0f, 0f, 0f },
-    //     new[] { 0f, 0f, 0f, 0f },
-    // };
+    private readonly ModernOpenGLDraw openGlDraw;
 
     public DebugDraw(GL gl)
     {
@@ -47,11 +36,82 @@ public class DebugDraw
         openGlDraw = new ModernOpenGLDraw(gl);
     }
 
+    private ModernOpenGLDraw GetOpenGlDraw()
+    {
+        return openGlDraw;
+    }
+
+    public void Init(float fogDistance)
+    {
+        GetOpenGlDraw().Init();
+    }
+
+    public void Clear()
+    {
+        GetOpenGlDraw().Clear();
+    }
+
+    public void End()
+    {
+        GetOpenGlDraw().End();
+    }
 
     public void Begin(DebugDrawPrimitives prim)
     {
         Begin(prim, 1f);
     }
+
+    public void Begin(DebugDrawPrimitives prim, float size)
+    {
+        GetOpenGlDraw().Begin(prim, size);
+    }
+
+
+    public void Fog(float start, float end)
+    {
+        GetOpenGlDraw().Fog(start, end);
+    }
+
+    public void Fog(bool state)
+    {
+        GetOpenGlDraw().Fog(state);
+    }
+
+    public void DepthMask(bool state)
+    {
+        GetOpenGlDraw().DepthMask(state);
+    }
+
+    public void Texture(bool state)
+    {
+        GetOpenGlDraw().Texture(g_tex, state);
+    }
+
+    public void Vertex(float[] pos, int color)
+    {
+        GetOpenGlDraw().Vertex(pos, color);
+    }
+
+    public void Vertex(RcVec3f pos, int color)
+    {
+        GetOpenGlDraw().Vertex(pos, color);
+    }
+
+    public void Vertex(float x, float y, float z, int color)
+    {
+        GetOpenGlDraw().Vertex(x, y, z, color);
+    }
+
+    public void Vertex(RcVec3f pos, int color, RcVec2f uv)
+    {
+        GetOpenGlDraw().Vertex(pos, color, uv);
+    }
+
+    public void Vertex(float x, float y, float z, int color, float u, float v)
+    {
+        GetOpenGlDraw().Vertex(x, y, z, color, u, v);
+    }
+
 
     public void DebugDrawCylinderWire(float minx, float miny, float minz, float maxx, float maxy, float maxz, int col,
         float lineWidth)
@@ -72,9 +132,9 @@ public class DebugDraw
             cylinderInit = true;
             for (int i = 0; i < CYLINDER_NUM_SEG; ++i)
             {
-                float a = (float)(i * Math.PI * 2 / CYLINDER_NUM_SEG);
-                cylinderDir[i * 2] = (float)Math.Cos(a);
-                cylinderDir[i * 2 + 1] = (float)Math.Sin(a);
+                float a = (float)(i * MathF.PI * 2 / CYLINDER_NUM_SEG);
+                cylinderDir[i * 2] = MathF.Cos(a);
+                cylinderDir[i * 2 + 1] = MathF.Sin(a);
             }
         }
     }
@@ -111,6 +171,25 @@ public class DebugDraw
         End();
     }
 
+    public void DebugDrawGridXZ(float ox, float oy, float oz, int w, int h, float size, int col, float lineWidth)
+    {
+        Begin(DebugDrawPrimitives.LINES, lineWidth);
+        for (int i = 0; i <= h; ++i)
+        {
+            Vertex(ox, oy, oz + i * size, col);
+            Vertex(ox + w * size, oy, oz + i * size, col);
+        }
+
+        for (int i = 0; i <= w; ++i)
+        {
+            Vertex(ox + i * size, oy, oz, col);
+            Vertex(ox + i * size, oy, oz + h * size, col);
+        }
+
+        End();
+    }
+
+
     public void AppendBoxWire(float minx, float miny, float minz, float maxx, float maxy, float maxz, int col)
     {
         // Top
@@ -144,30 +223,64 @@ public class DebugDraw
         Vertex(minx, maxy, maxz, col);
     }
 
+    private readonly int[] boxIndices = { 7, 6, 5, 4, 0, 1, 2, 3, 1, 5, 6, 2, 3, 7, 4, 0, 2, 6, 7, 3, 0, 4, 5, 1, };
+
+    private readonly float[][] boxVerts =
+    {
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f }
+    };
+
     public void AppendBox(float minx, float miny, float minz, float maxx, float maxy, float maxz, int[] fcol)
     {
-        float[][] verts =
-        {
-            new[] { minx, miny, minz },
-            new[] { maxx, miny, minz },
-            new[] { maxx, miny, maxz },
-            new[] { minx, miny, maxz },
-            new[] { minx, maxy, minz },
-            new[] { maxx, maxy, minz },
-            new[] { maxx, maxy, maxz },
-            new[] { minx, maxy, maxz }
-        };
+        boxVerts[0][0] = minx;
+        boxVerts[0][1] = miny;
+        boxVerts[0][2] = minz;
+
+        boxVerts[1][0] = maxx;
+        boxVerts[1][1] = miny;
+        boxVerts[1][2] = minz;
+
+        boxVerts[2][0] = maxx;
+        boxVerts[2][1] = miny;
+        boxVerts[2][2] = maxz;
+
+        boxVerts[3][0] = minx;
+        boxVerts[3][1] = miny;
+        boxVerts[3][2] = maxz;
+
+        boxVerts[4][0] = minx;
+        boxVerts[4][1] = maxy;
+        boxVerts[4][2] = minz;
+
+        boxVerts[5][0] = maxx;
+        boxVerts[5][1] = maxy;
+        boxVerts[5][2] = minz;
+
+        boxVerts[6][0] = maxx;
+        boxVerts[6][1] = maxy;
+        boxVerts[6][2] = maxz;
+
+        boxVerts[7][0] = minx;
+        boxVerts[7][1] = maxy;
+        boxVerts[7][2] = maxz;
 
         int idx = 0;
         for (int i = 0; i < 6; ++i)
         {
-            Vertex(verts[boxIndices[idx]], fcol[i]);
+            Vertex(boxVerts[boxIndices[idx]], fcol[i]);
             idx++;
-            Vertex(verts[boxIndices[idx]], fcol[i]);
+            Vertex(boxVerts[boxIndices[idx]], fcol[i]);
             idx++;
-            Vertex(verts[boxIndices[idx]], fcol[i]);
+            Vertex(boxVerts[boxIndices[idx]], fcol[i]);
             idx++;
-            Vertex(verts[boxIndices[idx]], fcol[i]);
+            Vertex(boxVerts[boxIndices[idx]], fcol[i]);
             idx++;
         }
     }
@@ -180,42 +293,6 @@ public class DebugDraw
         End();
     }
 
-    public void Begin(DebugDrawPrimitives prim, float size)
-    {
-        GetOpenGlDraw().Begin(prim, size);
-    }
-
-    public void Vertex(float[] pos, int color)
-    {
-        GetOpenGlDraw().Vertex(pos, color);
-    }
-    
-    public void Vertex(RcVec3f pos, int color)
-    {
-        GetOpenGlDraw().Vertex(pos, color);
-    }
-
-
-    public void Vertex(float x, float y, float z, int color)
-    {
-        GetOpenGlDraw().Vertex(x, y, z, color);
-    }
-
-    public void Vertex(RcVec3f pos, int color, RcVec2f uv)
-    {
-        GetOpenGlDraw().Vertex(pos, color, uv);
-    }
-
-    public void Vertex(float x, float y, float z, int color, float u, float v)
-    {
-        GetOpenGlDraw().Vertex(x, y, z, color, u, v);
-    }
-
-    public void End()
-    {
-        GetOpenGlDraw().End();
-    }
-
     public void DebugDrawCircle(float x, float y, float z, float r, int col, float lineWidth)
     {
         Begin(DebugDrawPrimitives.LINES, lineWidth);
@@ -226,8 +303,8 @@ public class DebugDraw
     private bool circleInit = false;
     private const int CIRCLE_NUM_SEG = 40;
     private readonly float[] circeDir = new float[CIRCLE_NUM_SEG * 2];
-    private float[] _viewMatrix = new float[16];
-    private readonly float[] _projectionMatrix = new float[16];
+    private RcMatrix4x4f _viewMatrix = new();
+    private RcMatrix4x4f _projectionMatrix = new();
 
     public void AppendCircle(float x, float y, float z, float r, int col)
     {
@@ -236,9 +313,9 @@ public class DebugDraw
             circleInit = true;
             for (int i = 0; i < CIRCLE_NUM_SEG; ++i)
             {
-                float a = (float)(i * Math.PI * 2 / CIRCLE_NUM_SEG);
-                circeDir[i * 2] = (float)Math.Cos(a);
-                circeDir[i * 2 + 1] = (float)Math.Sin(a);
+                float a = (float)(i * MathF.PI * 2 / CIRCLE_NUM_SEG);
+                circeDir[i * 2] = MathF.Cos(a);
+                circeDir[i * 2 + 1] = MathF.Sin(a);
             }
         }
 
@@ -249,16 +326,16 @@ public class DebugDraw
         }
     }
 
-    private static readonly int NUM_ARC_PTS = 8;
-    private static readonly float PAD = 0.05f;
-    private static readonly float ARC_PTS_SCALE = (1.0f - PAD * 2) / NUM_ARC_PTS;
+    private const int NUM_ARC_PTS = 8;
+    private const float PAD = 0.05f;
+    private const float ARC_PTS_SCALE = (1.0f - PAD * 2) / NUM_ARC_PTS;
 
     public void AppendArc(float x0, float y0, float z0, float x1, float y1, float z1, float h, float as0, float as1, int col)
     {
         float dx = x1 - x0;
         float dy = y1 - y0;
         float dz = z1 - z0;
-        float len = (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+        float len = MathF.Sqrt(dx * dx + dy * dy + dz * dz);
         RcVec3f prev = new RcVec3f();
         EvalArc(x0, y0, z0, dx, dy, dz, len * h, PAD, ref prev);
         for (int i = 1; i <= NUM_ARC_PTS; ++i)
@@ -266,11 +343,11 @@ public class DebugDraw
             float u = PAD + i * ARC_PTS_SCALE;
             RcVec3f pt = new RcVec3f();
             EvalArc(x0, y0, z0, dx, dy, dz, len * h, u, ref pt);
-            Vertex(prev.x, prev.y, prev.z, col);
-            Vertex(pt.x, pt.y, pt.z, col);
-            prev.x = pt.x;
-            prev.y = pt.y;
-            prev.z = pt.z;
+            Vertex(prev.X, prev.Y, prev.Z, col);
+            Vertex(pt.X, pt.Y, pt.Z, col);
+            prev.X = pt.X;
+            prev.Y = pt.Y;
+            prev.Z = pt.Z;
         }
 
         // End arrows
@@ -295,9 +372,9 @@ public class DebugDraw
 
     private void EvalArc(float x0, float y0, float z0, float dx, float dy, float dz, float h, float u, ref RcVec3f res)
     {
-        res.x = x0 + dx * u;
-        res.y = y0 + dy * u + h * (1 - (u * 2 - 1) * (u * 2 - 1));
-        res.z = z0 + dz * u;
+        res.X = x0 + dx * u;
+        res.Y = y0 + dy * u + h * (1 - (u * 2 - 1) * (u * 2 - 1));
+        res.Z = z0 + dz * u;
     }
 
     public void DebugDrawCross(float x, float y, float z, float size, int col, float lineWidth)
@@ -384,8 +461,8 @@ public class DebugDraw
         Vertex(x1, y1, z1, col);
 
         // End arrows
-        RcVec3f p = RcVec3f.Of(x0, y0, z0);
-        RcVec3f q = RcVec3f.Of(x1, y1, z1);
+        RcVec3f p = new RcVec3f(x0, y0, z0);
+        RcVec3f q = new RcVec3f(x1, y1, z1);
         if (as0 > 0.001f)
             AppendArrowHead(p, q, as0, col);
         if (as1 > 0.001f)
@@ -401,7 +478,7 @@ public class DebugDraw
         }
 
         RcVec3f ax = new RcVec3f();
-        RcVec3f ay = RcVec3f.Of(0, 1, 0);
+        RcVec3f ay = new RcVec3f(0, 1, 0);
         RcVec3f az = new RcVec3f();
         Vsub(ref az, q, p);
         Vnormalize(ref az);
@@ -411,40 +488,40 @@ public class DebugDraw
 
         Vertex(p, col);
         // Vertex(p.x+az.x*s+ay.x*s/2, p.y+az.y*s+ay.y*s/2, p.z+az.z*s+ay.z*s/2, col);
-        Vertex(p.x + az.x * s + ax.x * s / 3, p.y + az.y * s + ax.y * s / 3, p.z + az.z * s + ax.z * s / 3, col);
+        Vertex(p.X + az.X * s + ax.X * s / 3, p.Y + az.Y * s + ax.Y * s / 3, p.Z + az.Z * s + ax.Z * s / 3, col);
 
         Vertex(p, col);
         // Vertex(p.x+az.x*s-ay.x*s/2, p.y+az.y*s-ay.y*s/2, p.z+az.z*s-ay.z*s/2, col);
-        Vertex(p.x + az.x * s - ax.x * s / 3, p.y + az.y * s - ax.y * s / 3, p.z + az.z * s - ax.z * s / 3, col);
+        Vertex(p.X + az.X * s - ax.X * s / 3, p.Y + az.Y * s - ax.Y * s / 3, p.Z + az.Z * s - ax.Z * s / 3, col);
     }
 
     public void Vcross(ref RcVec3f dest, RcVec3f v1, RcVec3f v2)
     {
-        dest.x = v1.y * v2.z - v1.z * v2.y;
-        dest.y = v1.z * v2.x - v1.x * v2.z;
-        dest.z = v1.x * v2.y - v1.y * v2.x;
+        dest.X = v1.Y * v2.Z - v1.Z * v2.Y;
+        dest.Y = v1.Z * v2.X - v1.X * v2.Z;
+        dest.Z = v1.X * v2.Y - v1.Y * v2.X;
     }
 
     public void Vnormalize(ref RcVec3f v)
     {
-        float d = (float)(1.0f / Math.Sqrt(v.x * v.x + v.y * v.y + v.z * v.z));
-        v.x *= d;
-        v.y *= d;
-        v.z *= d;
+        float d = (float)(1.0f / Math.Sqrt(v.X * v.X + v.Y * v.Y + v.Z * v.Z));
+        v.X *= d;
+        v.Y *= d;
+        v.Z *= d;
     }
 
     public void Vsub(ref RcVec3f dest, RcVec3f v1, RcVec3f v2)
     {
-        dest.x = v1.x - v2.x;
-        dest.y = v1.y - v2.y;
-        dest.z = v1.z - v2.z;
+        dest.X = v1.X - v2.X;
+        dest.Y = v1.Y - v2.Y;
+        dest.Z = v1.Z - v2.Z;
     }
 
     public float VdistSqr(RcVec3f v1, RcVec3f v2)
     {
-        float x = v1.x - v2.x;
-        float y = v1.y - v2.y;
-        float z = v1.z - v2.z;
+        float x = v1.X - v2.X;
+        float y = v1.Y - v2.Y;
+        float z = v1.Z - v2.Z;
         return x * x + y * y + z * z;
     }
 
@@ -510,7 +587,8 @@ public class DebugDraw
 
     public static int Bit(int a, int b)
     {
-        return (a & (1 << b)) >>> b;
+        //return (a & (1 << b)) >>> b;
+        return (a >> b) & 1;
     }
 
     public static int DuIntToCol(int i, int a)
@@ -547,94 +625,60 @@ public class DebugDraw
 
     public static int DuDarkenCol(int col)
     {
-        return (int)(((col >> 1) & 0x007f7f7f) | (col & 0xff000000));
+        return (int)((uint)((col >> 1) & 0x007f7f7f) | (col & 0xff000000));
     }
 
-    public void Fog(float start, float end)
-    {
-        GetOpenGlDraw().Fog(start, end);
-    }
 
-    public void Fog(bool state)
+    public RcMatrix4x4f ProjectionMatrix(float fovy, float aspect, float near, float far)
     {
-        GetOpenGlDraw().Fog(state);
-    }
-
-    public void DepthMask(bool state)
-    {
-        GetOpenGlDraw().DepthMask(state);
-    }
-
-    public void Texture(bool state)
-    {
-        GetOpenGlDraw().Texture(g_tex, state);
-    }
-
-    public void Init(float fogDistance)
-    {
-        GetOpenGlDraw().Init();
-    }
-
-    public void Clear()
-    {
-        GetOpenGlDraw().Clear();
-    }
-
-    public float[] ProjectionMatrix(float fovy, float aspect, float near, float far)
-    {
-        GLU.GlhPerspectivef2(_projectionMatrix, fovy, aspect, near, far);
-        GetOpenGlDraw().ProjectionMatrix(_projectionMatrix);
+        GLU.GlhPerspectivef2(ref _projectionMatrix, fovy, aspect, near, far);
+        GetOpenGlDraw().ProjectionMatrix(ref _projectionMatrix);
         UpdateFrustum();
         return _projectionMatrix;
     }
 
-    public float[] ViewMatrix(RcVec3f cameraPos, float[] cameraEulers)
+    public RcMatrix4x4f ViewMatrix(RcVec3f cameraPos, RcVec2f cameraEulers)
     {
-        float[] rx = GLU.Build_4x4_rotation_matrix(cameraEulers[0], 1, 0, 0);
-        float[] ry = GLU.Build_4x4_rotation_matrix(cameraEulers[1], 0, 1, 0);
-        float[] r = GLU.Mul(rx, ry);
-        float[] t = new float[16];
-        t[0] = t[5] = t[10] = t[15] = 1;
-        t[12] = -cameraPos.x;
-        t[13] = -cameraPos.y;
-        t[14] = -cameraPos.z;
-        _viewMatrix = GLU.Mul(r, t);
-        GetOpenGlDraw().ViewMatrix(_viewMatrix);
+        var rx = RcMatrix4x4f.CreateFromRotate(cameraEulers.X, 1, 0, 0);
+        var ry = RcMatrix4x4f.CreateFromRotate(cameraEulers.Y, 0, 1, 0);
+        var r = RcMatrix4x4f.Mul(ref rx, ref ry);
+
+        var t = new RcMatrix4x4f();
+        t.M11 = t.M22 = t.M33 = t.M44 = 1;
+        t.M41 = -cameraPos.X;
+        t.M42 = -cameraPos.Y;
+        t.M43 = -cameraPos.Z;
+        _viewMatrix = RcMatrix4x4f.Mul(ref r, ref t);
+        GetOpenGlDraw().ViewMatrix(ref _viewMatrix);
         UpdateFrustum();
         return _viewMatrix;
     }
 
-    private IOpenGLDraw GetOpenGlDraw()
+
+    private readonly float[][] frustumPlanes =
     {
-        return openGlDraw;
-    }
+        new[] { 0f, 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f, 0f },
+        new[] { 0f, 0f, 0f, 0f },
+    };
 
     private void UpdateFrustum()
     {
-        float[] vpm = GLU.Mul(_projectionMatrix, _viewMatrix);
-        // left
-        frustumPlanes[0] = NormalizePlane(vpm[0 + 3] + vpm[0 + 0], vpm[4 + 3] + vpm[4 + 0], vpm[8 + 3] + vpm[8 + 0],
-            vpm[12 + 3] + vpm[12 + 0]);
-        // right
-        frustumPlanes[1] = NormalizePlane(vpm[0 + 3] - vpm[0 + 0], vpm[4 + 3] - vpm[4 + 0], vpm[8 + 3] - vpm[8 + 0],
-            vpm[12 + 3] - vpm[12 + 0]);
-        // top
-        frustumPlanes[2] = NormalizePlane(vpm[0 + 3] - vpm[0 + 1], vpm[4 + 3] - vpm[4 + 1], vpm[8 + 3] - vpm[8 + 1],
-            vpm[12 + 3] - vpm[12 + 1]);
-        // bottom
-        frustumPlanes[3] = NormalizePlane(vpm[0 + 3] + vpm[0 + 1], vpm[4 + 3] + vpm[4 + 1], vpm[8 + 3] + vpm[8 + 1],
-            vpm[12 + 3] + vpm[12 + 1]);
-        // near
-        frustumPlanes[4] = NormalizePlane(vpm[0 + 3] + vpm[0 + 2], vpm[4 + 3] + vpm[4 + 2], vpm[8 + 3] + vpm[8 + 2],
-            vpm[12 + 3] + vpm[12 + 2]);
-        // far
-        frustumPlanes[5] = NormalizePlane(vpm[0 + 3] - vpm[0 + 2], vpm[4 + 3] - vpm[4 + 2], vpm[8 + 3] - vpm[8 + 2],
-            vpm[12 + 3] - vpm[12 + 2]);
+        var vpm = RcMatrix4x4f.Mul(ref _projectionMatrix, ref _viewMatrix);
+        NormalizePlane(vpm.M14 + vpm.M11, vpm.M24 + vpm.M21, vpm.M34 + vpm.M31, vpm.M44 + vpm.M41, ref frustumPlanes[0]); // left
+        NormalizePlane(vpm.M14 - vpm.M11, vpm.M24 - vpm.M21, vpm.M34 - vpm.M31, vpm.M44 - vpm.M41, ref frustumPlanes[1]); // right
+        NormalizePlane(vpm.M14 - vpm.M12, vpm.M24 - vpm.M22, vpm.M34 - vpm.M32, vpm.M44 - vpm.M42, ref frustumPlanes[2]); // top
+        NormalizePlane(vpm.M14 + vpm.M12, vpm.M24 + vpm.M22, vpm.M34 + vpm.M32, vpm.M44 + vpm.M42, ref frustumPlanes[3]); // bottom
+        NormalizePlane(vpm.M14 + vpm.M13, vpm.M24 + vpm.M23, vpm.M34 + vpm.M33, vpm.M44 + vpm.M43, ref frustumPlanes[4]); // near
+        NormalizePlane(vpm.M14 - vpm.M13, vpm.M24 - vpm.M23, vpm.M34 - vpm.M33, vpm.M44 - vpm.M43, ref frustumPlanes[5]); // far
     }
 
-    private float[] NormalizePlane(float px, float py, float pz, float pw)
+    private void NormalizePlane(float px, float py, float pz, float pw, ref float[] plane)
     {
-        float length = (float)Math.Sqrt(px * px + py * py + pz * pz);
+        float length = MathF.Sqrt(px * px + py * py + pz * pz);
         if (length != 0)
         {
             length = 1f / length;
@@ -644,10 +688,13 @@ public class DebugDraw
             pw *= length;
         }
 
-        return new float[] { px, py, pz, pw };
+        plane[0] = px;
+        plane[1] = py;
+        plane[2] = pz;
+        plane[3] = pw;
     }
 
-    public bool FrustumTest(float[] bounds)
+    public bool FrustumTest(Span<float> bounds)
     {
         foreach (float[] plane in frustumPlanes)
         {
@@ -701,6 +748,6 @@ public class DebugDraw
 
     public bool FrustumTest(RcVec3f bmin, RcVec3f bmax)
     {
-        return FrustumTest(new float[] { bmin.x, bmin.y, bmin.z, bmax.x, bmax.y, bmax.z });
+        return FrustumTest(stackalloc float[] { bmin.X, bmin.Y, bmin.Z, bmax.X, bmax.Y, bmax.Z });
     }
 }

@@ -1,5 +1,6 @@
 /*
-recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -18,7 +19,7 @@ freely, subject to the following restrictions:
 
 using System.IO;
 using System.IO.Compression;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace DotRecast.Detour.Extras.Unity.Astar
 {
@@ -29,13 +30,13 @@ namespace DotRecast.Detour.Extras.Unity.Astar
             ZipArchiveEntry entry = file.GetEntry(filename);
             using StreamReader reader = new StreamReader(entry.Open());
 
-            JsonSerializerOptions options = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-
+            // for unity3d
             var json = reader.ReadToEnd();
-            return JsonSerializer.Deserialize<GraphMeta>(json, options);
+            return JsonConvert.DeserializeObject<GraphMeta>(json);
+            
+            // var settings = new JsonSerializerSettings();
+            // settings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+            //return JsonConvert.DeserializeObject<GraphMeta>(json, settings);
         }
     }
 }

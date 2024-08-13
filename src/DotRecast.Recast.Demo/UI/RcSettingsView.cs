@@ -1,5 +1,6 @@
 /*
-recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -17,14 +18,11 @@ freely, subject to the following restrictions:
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using DotRecast.Core;
+using DotRecast.Core.Collections;
 using DotRecast.Recast.Demo.Draw;
 using DotRecast.Recast.Demo.Messages;
-using DotRecast.Recast.DemoTool;
 using ImGuiNET;
 using Serilog;
 
@@ -47,7 +45,7 @@ public class RcSettingsView : IRcView
     private bool _isHovered;
     public bool IsHovered() => _isHovered;
 
-    private Sample _sample;
+    private DemoSample _sample;
     private RcCanvas _canvas;
 
     public RcSettingsView(IRecastDemoChannel channel)
@@ -55,7 +53,7 @@ public class RcSettingsView : IRcView
         _channel = channel;
     }
 
-    public void SetSample(Sample sample)
+    public void SetSample(DemoSample sample)
     {
         _sample = sample;
     }
@@ -126,7 +124,7 @@ public class RcSettingsView : IRcView
         ImGui.Text("Agent");
         ImGui.Separator();
         ImGui.SliderFloat("Height", ref settings.agentHeight, 0.1f, 5f, "%.1f");
-        ImGui.SliderFloat("Radius", ref settings.agentRadius, 0.1f, 5f, "%.1f");
+        ImGui.SliderFloat("Radius", ref settings.agentRadius, 0.0f, 5f, "%.1f");
         ImGui.SliderFloat("Max Climb", ref settings.agentMaxClimb, 0.1f, 5f, "%.1f");
         ImGui.SliderFloat("Max Slope", ref settings.agentMaxSlope, 1f, 90f, "%.0f");
         ImGui.SliderFloat("Max Acceleration", ref settings.agentMaxAcceleration, 8f, 999f, "%.1f");
@@ -142,10 +140,10 @@ public class RcSettingsView : IRcView
 
         ImGui.Text("Partitioning");
         ImGui.Separator();
-        PartitionType.Values.ForEach(partition =>
+        RcPartitionType.Values.ForEach(partition =>
         {
             var label = partition.Name.Substring(0, 1).ToUpper() + partition.Name.Substring(1).ToLower();
-            ImGui.RadioButton(label, ref settings.partitioningIdx, partition.Idx);
+            ImGui.RadioButton(label, ref settings.partitioning, partition.Value);
         });
         ImGui.NewLine();
 
@@ -167,6 +165,10 @@ public class RcSettingsView : IRcView
         ImGui.Separator();
         ImGui.SliderFloat("Sample Distance", ref settings.detailSampleDist, 0f, 16f, "%.1f");
         ImGui.SliderFloat("Max Sample Error", ref settings.detailSampleMaxError, 0f, 16f, "%.1f");
+        ImGui.NewLine();
+
+        ImGui.Checkbox("Keep Itermediate Results", ref settings.keepInterResults);
+        ImGui.Checkbox("Build All Tiles", ref settings.buildAll);
         ImGui.NewLine();
 
         ImGui.Text("Tiling");
@@ -229,6 +231,12 @@ public class RcSettingsView : IRcView
         ImGui.Separator();
 
         DrawMode.Values.ForEach(dm => { ImGui.RadioButton(dm.Text, ref drawMode, dm.Idx); });
+        ImGui.NewLine();
+
+        ImGui.Separator();
+        ImGui.Text("Tick 'Keep Itermediate Results'");
+        ImGui.Text("rebuild some tiles to see");
+        ImGui.Text("more debug mode options.");
         ImGui.NewLine();
 
         ImGui.End();

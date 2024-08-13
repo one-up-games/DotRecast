@@ -1,8 +1,8 @@
 ﻿using System.IO;
+using System.Threading;
 using DotRecast.Core;
 using DotRecast.Recast.Demo.Logging.Sinks;
 using Serilog;
-using Serilog.Enrichers;
 
 namespace DotRecast.Recast.Demo;
 
@@ -10,6 +10,8 @@ public static class Program
 {
     public static void Main(string[] args)
     {
+        Thread.CurrentThread.Name ??= "main";
+        
         InitializeWorkingDirectory();
         InitializeLogger();
         StartDemo();
@@ -22,7 +24,6 @@ public static class Program
             .MinimumLevel.Verbose()
             .Enrich.WithThreadId()
             .Enrich.WithThreadName()
-            .Enrich.WithProperty(ThreadNameEnricher.ThreadNamePropertyName, "main")
             .WriteTo.Async(c => c.LogMessageBroker(outputTemplate: format))
             .WriteTo.Async(c => c.Console(outputTemplate: format))
             .WriteTo.Async(c => c.File(
@@ -37,11 +38,10 @@ public static class Program
 
     private static void InitializeWorkingDirectory()
     {
-        var path = Loader.ToRPath("dungeon.obj");
-        path = Path.GetDirectoryName(path);
+        var path = RcDirectory.SearchDirectory("resources/dungeon.obj");
         if (!string.IsNullOrEmpty(path))
         {
-            var workingDirectory = Path.Combine(path, "..");
+            var workingDirectory = Path.GetDirectoryName(path) ?? string.Empty;
             workingDirectory = Path.GetFullPath(workingDirectory);
             Directory.SetCurrentDirectory(workingDirectory);
         }

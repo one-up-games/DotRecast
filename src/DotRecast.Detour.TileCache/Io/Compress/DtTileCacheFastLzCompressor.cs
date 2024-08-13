@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -19,23 +19,35 @@ freely, subject to the following restrictions:
 */
 
 using DotRecast.Core;
+using DotRecast.Core.Compression;
 
 namespace DotRecast.Detour.TileCache.Io.Compress
 {
-    public class DtTileCacheFastLzCompressor : IDtTileCacheCompressor
+    public class DtTileCacheFastLzCompressor : IRcCompressor
     {
+        public static readonly DtTileCacheFastLzCompressor Shared = new DtTileCacheFastLzCompressor();
+
+        private DtTileCacheFastLzCompressor()
+        {
+        }
+
+        public byte[] Decompress(byte[] buf)
+        {
+            return Decompress(buf, 0, buf.Length, buf.Length * 3);
+        }
+
         public byte[] Decompress(byte[] buf, int offset, int len, int outputlen)
         {
             byte[] output = new byte[outputlen];
-            FastLz.Decompress(buf, offset, len, output, 0, outputlen);
+            FastLZ.Decompress(buf, offset, len, output, 0, outputlen);
             return output;
         }
 
         public byte[] Compress(byte[] buf)
         {
-            byte[] output = new byte[FastLz.CalculateOutputBufferLength(buf.Length)];
-            int len = FastLz.Compress(buf, 0, buf.Length, output, 0, output.Length);
-            return RcArrayUtils.CopyOf(output, len);
+            byte[] output = new byte[FastLZ.EstimateCompressedSize(buf.Length)];
+            long len = FastLZ.CompressLevel(2, buf, 0, buf.Length, output);
+            return RcArrays.CopyOf(output, len);
         }
     }
 }

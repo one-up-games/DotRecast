@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -20,15 +20,13 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using DotRecast.Core;
-using DotRecast.Recast;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.TileCache.Test;
 
-[Parallelizable]
+
 public class TileCacheTest : AbstractTileCacheTest
 {
     [Test]
@@ -59,7 +57,7 @@ public class TileCacheTest : AbstractTileCacheTest
 
     private void TestDungeon(RcByteOrder order, bool cCompatibility)
     {
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("dungeon.obj"));
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("dungeon.obj");
         DtTileCache tc = GetTileCache(geom, order, cCompatibility);
         TestTileLayerBuilder layerBuilder = new TestTileLayerBuilder(geom);
         List<byte[]> layers = layerBuilder.Build(order, cCompatibility, 1);
@@ -155,7 +153,7 @@ public class TileCacheTest : AbstractTileCacheTest
 
     private void Test(RcByteOrder order, bool cCompatibility)
     {
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("nav_test.obj"));
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("nav_test.obj");
         DtTileCache tc = GetTileCache(geom, order, cCompatibility);
         TestTileLayerBuilder layerBuilder = new TestTileLayerBuilder(geom);
         List<byte[]> layers = layerBuilder.Build(order, cCompatibility, 1);
@@ -178,10 +176,11 @@ public class TileCacheTest : AbstractTileCacheTest
     [Test]
     public void TestPerformance()
     {
-        int threads = 4;
+        int threads = Environment.ProcessorCount;
         RcByteOrder order = RcByteOrder.LITTLE_ENDIAN;
         bool cCompatibility = false;
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("dungeon.obj"));
+
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("dungeon.obj");
         TestTileLayerBuilder layerBuilder = new TestTileLayerBuilder(geom);
         for (int i = 0; i < 4; i++)
         {

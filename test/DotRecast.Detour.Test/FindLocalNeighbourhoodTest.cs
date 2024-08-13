@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -17,12 +18,12 @@ freely, subject to the following restrictions:
 */
 
 using System.Collections.Generic;
-using DotRecast.Core;
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
+
 public class FindLocalNeighbourhoodTest : AbstractDetourTest
 {
     private static readonly long[][] REFS =
@@ -60,7 +61,7 @@ public class FindLocalNeighbourhoodTest : AbstractDetourTest
             RcVec3f startPos = startPoss[i];
             var refs = new List<long>();
             var parentRefs = new List<long>();
-            var status = query.FindLocalNeighbourhood(startRefs[i], startPos, 3.5f, filter, refs, parentRefs);
+            var status = query.FindLocalNeighbourhood(startRefs[i], startPos, 3.5f, filter, ref refs, ref parentRefs);
             Assert.That(refs.Count, Is.EqualTo(REFS[i].Length));
             for (int v = 0; v < REFS[i].Length; v++)
             {

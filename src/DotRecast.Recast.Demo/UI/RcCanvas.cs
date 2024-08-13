@@ -1,5 +1,6 @@
 /*
-recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,7 +17,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using System.Numerics;
+
 using ImGuiNET;
 using Serilog;
 using Serilog.Core;
@@ -34,7 +35,7 @@ public class RcCanvas
     private readonly IWindow _window;
     private readonly IRcView[] _views;
     private bool _mouseOver;
-    
+
     public bool IsMouseOver() => _mouseOver;
 
     public Vector2D<int> Size => _window.Size;

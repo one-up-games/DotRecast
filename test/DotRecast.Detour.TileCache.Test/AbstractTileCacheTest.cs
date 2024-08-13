@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -20,17 +20,18 @@ freely, subject to the following restrictions:
 
 using DotRecast.Core;
 using DotRecast.Detour.TileCache.Io.Compress;
+using DotRecast.Recast;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
-using static DotRecast.Core.RcMath;
 
 
 namespace DotRecast.Detour.TileCache.Test;
 
-[Parallelizable]
+
 public class AbstractTileCacheTest
 {
     private const int EXPECTED_LAYERS_PER_TILE = 4;
+
     private readonly float m_cellSize = 0.3f;
     private readonly float m_cellHeight = 0.2f;
     private readonly float m_agentHeight = 2.0f;
@@ -39,21 +40,11 @@ public class AbstractTileCacheTest
     private readonly float m_edgeMaxError = 1.3f;
     private readonly int m_tileSize = 48;
 
-    protected class TestTileCacheMeshProcess : IDtTileCacheMeshProcess
-    {
-        public void Process(DtNavMeshCreateParams option)
-        {
-            for (int i = 0; i < option.polyCount; ++i)
-            {
-                option.polyFlags[i] = 1;
-            }
-        }
-    }
 
     public DtTileCache GetTileCache(IInputGeomProvider geom, RcByteOrder order, bool cCompatibility)
     {
         DtTileCacheParams option = new DtTileCacheParams();
-        Recast.Recast.CalcTileCount(geom.GetMeshBoundsMin(), geom.GetMeshBoundsMax(), m_cellSize, m_tileSize, m_tileSize, out var tw, out var th);
+        RcRecast.CalcTileCount(geom.GetMeshBoundsMin(), geom.GetMeshBoundsMax(), m_cellSize, m_tileSize, m_tileSize, out var tw, out var th);
         option.ch = m_cellHeight;
         option.cs = m_cellSize;
         option.orig = geom.GetMeshBoundsMin();
@@ -65,15 +56,20 @@ public class AbstractTileCacheTest
         option.maxSimplificationError = m_edgeMaxError;
         option.maxTiles = tw * th * EXPECTED_LAYERS_PER_TILE;
         option.maxObstacles = 128;
+
         DtNavMeshParams navMeshParams = new DtNavMeshParams();
         navMeshParams.orig = geom.GetMeshBoundsMin();
         navMeshParams.tileWidth = m_tileSize * m_cellSize;
         navMeshParams.tileHeight = m_tileSize * m_cellSize;
         navMeshParams.maxTiles = 256;
         navMeshParams.maxPolys = 16384;
-        DtNavMesh navMesh = new DtNavMesh(navMeshParams, 6);
-        DtTileCache tc = new DtTileCache(option, new TileCacheStorageParams(order, cCompatibility), navMesh,
-            DtTileCacheCompressorFactory.Get(cCompatibility), new TestTileCacheMeshProcess());
+
+        var navMesh = new DtNavMesh();
+        navMesh.Init(navMeshParams, 6);
+        var comp = DtTileCacheCompressorFactory.Shared.Create(cCompatibility ? 0 : 1);
+        var storageParams = new DtTileCacheStorageParams(order, cCompatibility);
+        var process = new TestTileCacheMeshProcess();
+        DtTileCache tc = new DtTileCache(option, storageParams, navMesh, comp, process);
         return tc;
     }
 }

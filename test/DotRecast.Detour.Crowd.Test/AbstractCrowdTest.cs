@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -20,15 +20,11 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
-using DotRecast.Core;
-
+using DotRecast.Core.Numerics;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Crowd.Test;
 
-using static DotRecast.Core.RcMath;
-
-[Parallelizable]
 public class AbstractCrowdTest
 {
     protected readonly long[] startRefs =
@@ -41,20 +37,20 @@ public class AbstractCrowdTest
 
     protected readonly RcVec3f[] startPoss =
     {
-        RcVec3f.Of(22.60652f, 10.197294f, -45.918674f),
-        RcVec3f.Of(22.331268f, 10.197294f, -1.0401875f),
-        RcVec3f.Of(18.694363f, 15.803535f, -73.090416f),
-        RcVec3f.Of(0.7453353f, 10.197294f, -5.94005f),
-        RcVec3f.Of(-20.651257f, 5.904126f, -13.712508f),
+        new RcVec3f(22.60652f, 10.197294f, -45.918674f),
+        new RcVec3f(22.331268f, 10.197294f, -1.0401875f),
+        new RcVec3f(18.694363f, 15.803535f, -73.090416f),
+        new RcVec3f(0.7453353f, 10.197294f, -5.94005f),
+        new RcVec3f(-20.651257f, 5.904126f, -13.712508f),
     };
 
     protected readonly RcVec3f[] endPoss =
     {
-        RcVec3f.Of(6.4576626f, 10.197294f, -18.33406f),
-        RcVec3f.Of(-5.8023443f, 0.19729415f, 3.008419f),
-        RcVec3f.Of(38.423977f, 10.197294f, -0.116066754f),
-        RcVec3f.Of(0.8635526f, 10.197294f, -10.31032f),
-        RcVec3f.Of(18.784092f, 10.197294f, 3.0543678f),
+        new RcVec3f(6.4576626f, 10.197294f, -18.33406f),
+        new RcVec3f(-5.8023443f, 0.19729415f, 3.008419f),
+        new RcVec3f(38.423977f, 10.197294f, -0.116066754f),
+        new RcVec3f(0.8635526f, 10.197294f, -10.31032f),
+        new RcVec3f(18.784092f, 10.197294f, 3.0543678f),
     };
 
     protected DtMeshData nmd;
@@ -66,8 +62,9 @@ public class AbstractCrowdTest
     [SetUp]
     public void SetUp()
     {
-        nmd = new RecastTestMeshBuilder().GetMeshData();
-        navmesh = new DtNavMesh(nmd, 6, 0);
+        nmd = TestMeshDataFactory.Create();
+        navmesh = new DtNavMesh();
+        navmesh.Init(nmd, 6, 0);
         query = new DtNavMeshQuery(navmesh);
         DtCrowdConfig config = new DtCrowdConfig(0.6f);
         crowd = new DtCrowd(config, navmesh);
@@ -121,9 +118,9 @@ public class AbstractCrowdTest
             for (int j = 0; j < size; j++)
             {
                 RcVec3f pos = new RcVec3f();
-                pos.x = startPos.x + i * distance;
-                pos.y = startPos.y;
-                pos.z = startPos.z + j * distance;
+                pos.X = startPos.X + i * distance;
+                pos.Y = startPos.Y;
+                pos.Z = startPos.Z + j * distance;
                 agents.Add(crowd.AddAgent(pos, ap));
             }
         }
@@ -153,10 +150,10 @@ public class AbstractCrowdTest
 
     protected RcVec3f CalcVel(RcVec3f pos, RcVec3f tgt, float speed)
     {
-        RcVec3f vel = tgt.Subtract(pos);
-        vel.y = 0.0f;
-        vel.Normalize();
-        vel = vel.Scale(speed);
+        RcVec3f vel = RcVec3f.Subtract(tgt, pos);
+        vel.Y = 0.0f;
+        vel = RcVec3f.Normalize(vel);
+        vel = vel * speed;
         return vel;
     }
 
@@ -166,8 +163,8 @@ public class AbstractCrowdTest
         foreach (DtCrowdAgent ag in crowd.GetActiveAgents())
         {
             Console.WriteLine(ag.state + ", " + ag.targetState);
-            Console.WriteLine(ag.npos.x + ", " + ag.npos.y + ", " + ag.npos.z);
-            Console.WriteLine(ag.nvel.x + ", " + ag.nvel.y + ", " + ag.nvel.z);
+            Console.WriteLine(ag.npos.X + ", " + ag.npos.Y + ", " + ag.npos.Z);
+            Console.WriteLine(ag.nvel.X + ", " + ag.nvel.Y + ", " + ag.nvel.Z);
         }
     }
 }

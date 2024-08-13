@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -20,21 +20,20 @@ freely, subject to the following restrictions:
 
 using System.Collections.Generic;
 using DotRecast.Core;
-
-using DotRecast.Recast;
+using DotRecast.Core.Numerics;
 using DotRecast.Recast.Geom;
 using NUnit.Framework;
 
 namespace DotRecast.Detour.TileCache.Test;
 
-[Parallelizable]
+
 public class TileCacheNavigationTest : AbstractTileCacheTest
 {
     protected readonly long[] startRefs = { 281475006070787L };
     protected readonly long[] endRefs = { 281474986147841L };
-    protected readonly RcVec3f[] startPoss = { RcVec3f.Of(39.447338f, 9.998177f, -0.784811f) };
-    protected readonly RcVec3f[] endPoss = { RcVec3f.Of(19.292645f, 11.611748f, -57.750366f) };
-    private readonly DtStatus[] statuses = { DtStatus.DT_SUCCSESS };
+    protected readonly RcVec3f[] startPoss = { new RcVec3f(39.447338f, 9.998177f, -0.784811f) };
+    protected readonly RcVec3f[] endPoss = { new RcVec3f(19.292645f, 11.611748f, -57.750366f) };
+    private readonly DtStatus[] statuses = { DtStatus.DT_SUCCESS };
 
     private readonly long[][] results =
     {
@@ -56,7 +55,7 @@ public class TileCacheNavigationTest : AbstractTileCacheTest
     public void SetUp()
     {
         bool cCompatibility = true;
-        IInputGeomProvider geom = ObjImporter.Load(Loader.ToBytes("dungeon.obj"));
+        IInputGeomProvider geom = SimpleInputGeomProvider.LoadFile("dungeon.obj");
         TestTileLayerBuilder layerBuilder = new TestTileLayerBuilder(geom);
         List<byte[]> layers = layerBuilder.Build(RcByteOrder.LITTLE_ENDIAN, cCompatibility, 1);
         DtTileCache tc = GetTileCache(geom, RcByteOrder.LITTLE_ENDIAN, cCompatibility);
@@ -65,9 +64,9 @@ public class TileCacheNavigationTest : AbstractTileCacheTest
             tc.AddTile(data, 0);
         }
 
-        for (int y = 0; y < layerBuilder.GetTh(); ++y)
+        for (int y = 0; y < layerBuilder.th; ++y)
         {
-            for (int x = 0; x < layerBuilder.GetTw(); ++x)
+            for (int x = 0; x < layerBuilder.tw; ++x)
             {
                 foreach (long refs in tc.GetTilesAt(x, y))
                 {
@@ -91,7 +90,7 @@ public class TileCacheNavigationTest : AbstractTileCacheTest
             long endRef = endRefs[i];
             RcVec3f startPos = startPoss[i];
             RcVec3f endPos = endPoss[i];
-            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, path, DtFindPathOption.NoOption);
+            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, ref path, DtFindPathOption.NoOption);
             Assert.That(status, Is.EqualTo(statuses[i]));
             Assert.That(path.Count, Is.EqualTo(results[i].Length));
             for (int j = 0; j < results[i].Length; j++)
@@ -112,7 +111,7 @@ public class TileCacheNavigationTest : AbstractTileCacheTest
             long endRef = endRefs[i];
             RcVec3f startPos = startPoss[i];
             RcVec3f endPos = endPoss[i];
-            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, path, DtFindPathOption.ZeroScale);
+            var status = query.FindPath(startRef, endRef, startPos, endPos, filter, ref path, DtFindPathOption.ZeroScale);
             Assert.That(status, Is.EqualTo(statuses[i]));
             Assert.That(path.Count, Is.EqualTo(results[i].Length));
             for (int j = 0; j < results[i].Length; j++)

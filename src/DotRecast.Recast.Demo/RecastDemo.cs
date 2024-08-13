@@ -1,7 +1,7 @@
 /*
 Copyright (c) 2009-2010 Mikko Mononen memon@inside.org
 recast4j copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
-DotRecast Copyright (c) 2023 Choi Ikpil ikpil@naver.com
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -20,9 +20,12 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using DotRecast.Core;
 using Serilog;
 using Silk.NET.Input;
 using Silk.NET.Maths;
@@ -30,19 +33,16 @@ using Silk.NET.OpenGL;
 using Silk.NET.OpenGL.Extensions.ImGui;
 using Silk.NET.Windowing;
 using ImGuiNET;
-using DotRecast.Core;
+using DotRecast.Core.Numerics;
 using DotRecast.Detour;
 using DotRecast.Detour.Extras.Unity.Astar;
 using DotRecast.Detour.Io;
-using DotRecast.Recast.DemoTool.Builder;
+using DotRecast.Recast.Toolset.Builder;
 using DotRecast.Recast.Demo.Draw;
 using DotRecast.Recast.Demo.Messages;
-using DotRecast.Recast.DemoTool.Geom;
+using DotRecast.Recast.Toolset.Geom;
 using DotRecast.Recast.Demo.Tools;
 using DotRecast.Recast.Demo.UI;
-using DotRecast.Recast.DemoTool;
-using Silk.NET.GLFW;
-using static DotRecast.Core.RcMath;
 using MouseButton = Silk.NET.Input.MouseButton;
 using Window = Silk.NET.Windowing.Window;
 
@@ -58,6 +58,7 @@ public class RecastDemo : IRecastDemoChannel
     private ImGuiController _imgui;
     private RcCanvas _canvas;
 
+    private Vector2D<int> _resolution;
     private int width = 1000;
     private int height = 900;
 
@@ -72,13 +73,13 @@ public class RecastDemo : IRecastDemoChannel
     private readonly TileNavMeshBuilder tileNavMeshBuilder = new TileNavMeshBuilder();
 
     private string _lastGeomFileName;
-    private Sample _sample;
+    private DemoSample _sample;
 
     private bool processHitTest = false;
     private bool processHitTestShift;
     private int _modState;
 
-    private readonly float[] mousePos = new float[2];
+    private RcVec2f mousePos = new RcVec2f();
 
     private bool _mouseOverMenu;
     private bool pan;
@@ -86,12 +87,12 @@ public class RecastDemo : IRecastDemoChannel
     private bool rotate;
     private bool movedDuringRotate;
     private float scrollZoom;
-    private readonly float[] origMousePos = new float[2];
-    private readonly float[] origCameraEulers = new float[2];
+    private RcVec2f origMousePos = new RcVec2f();
+    private RcVec2f origCameraEulers = new RcVec2f();
     private RcVec3f origCameraPos = new RcVec3f();
 
-    private readonly float[] cameraEulers = { 45, -45 };
-    private RcVec3f cameraPos = RcVec3f.Of(0, 0, 0);
+    private RcVec2f cameraEulers = new RcVec2f(45, -45);
+    private RcVec3f cameraPos = new RcVec3f(0, 0, 0);
 
 
     private float[] projectionMatrix = new float[16];
@@ -109,7 +110,8 @@ public class RecastDemo : IRecastDemoChannel
     private bool markerPositionSet;
     private RcVec3f markerPosition = new RcVec3f();
 
-    private RcToolsetView toolset;
+    private RcMenuView _menuView;
+    private RcToolsetView _toolsetView;
     private RcSettingsView settingsView;
     private RcLogView logView;
 
@@ -146,23 +148,23 @@ public class RecastDemo : IRecastDemoChannel
             }
         }
 
-        float[] modelviewMatrix = dd.ViewMatrix(cameraPos, cameraEulers);
-        cameraPos.x += scrollZoom * 2.0f * modelviewMatrix[2];
-        cameraPos.y += scrollZoom * 2.0f * modelviewMatrix[6];
-        cameraPos.z += scrollZoom * 2.0f * modelviewMatrix[10];
+        var modelviewMatrix = dd.ViewMatrix(cameraPos, cameraEulers);
+        cameraPos.X += scrollZoom * 2.0f * modelviewMatrix.M13;
+        cameraPos.Y += scrollZoom * 2.0f * modelviewMatrix.M23;
+        cameraPos.Z += scrollZoom * 2.0f * modelviewMatrix.M33;
         scrollZoom = 0;
     }
 
     public void OnMouseMoved(IMouse mouse, Vector2 position)
     {
-        mousePos[0] = (float)position.X;
-        mousePos[1] = (float)position.Y;
-        int dx = (int)(mousePos[0] - origMousePos[0]);
-        int dy = (int)(mousePos[1] - origMousePos[1]);
+        mousePos.X = position.X;
+        mousePos.Y = position.Y;
+        int dx = (int)(mousePos.X - origMousePos.X);
+        int dy = (int)(mousePos.Y - origMousePos.Y);
         if (rotate)
         {
-            cameraEulers[0] = origCameraEulers[0] + dy * 0.25f;
-            cameraEulers[1] = origCameraEulers[1] + dx * 0.25f;
+            cameraEulers.X = origCameraEulers.X + dy * 0.25f;
+            cameraEulers.Y = origCameraEulers.Y + dx * 0.25f;
             if (dx * dx + dy * dy > 3 * 3)
             {
                 movedDuringRotate = true;
@@ -171,16 +173,16 @@ public class RecastDemo : IRecastDemoChannel
 
         if (pan)
         {
-            float[] modelviewMatrix = dd.ViewMatrix(cameraPos, cameraEulers);
+            var modelviewMatrix = dd.ViewMatrix(cameraPos, cameraEulers);
             cameraPos = origCameraPos;
 
-            cameraPos.x -= 0.1f * dx * modelviewMatrix[0];
-            cameraPos.y -= 0.1f * dx * modelviewMatrix[4];
-            cameraPos.z -= 0.1f * dx * modelviewMatrix[8];
+            cameraPos.X -= 0.1f * dx * modelviewMatrix.M11;
+            cameraPos.Y -= 0.1f * dx * modelviewMatrix.M21;
+            cameraPos.Z -= 0.1f * dx * modelviewMatrix.M31;
 
-            cameraPos.x += 0.1f * dy * modelviewMatrix[1];
-            cameraPos.y += 0.1f * dy * modelviewMatrix[5];
-            cameraPos.z += 0.1f * dy * modelviewMatrix[9];
+            cameraPos.X += 0.1f * dy * modelviewMatrix.M12;
+            cameraPos.Y += 0.1f * dy * modelviewMatrix.M22;
+            cameraPos.Z += 0.1f * dy * modelviewMatrix.M32;
             if (dx * dx + dy * dy > 3 * 3)
             {
                 movedDuringPan = true;
@@ -199,10 +201,8 @@ public class RecastDemo : IRecastDemoChannel
                     // Rotate view
                     rotate = true;
                     movedDuringRotate = false;
-                    origMousePos[0] = mousePos[0];
-                    origMousePos[1] = mousePos[1];
-                    origCameraEulers[0] = cameraEulers[0];
-                    origCameraEulers[1] = cameraEulers[1];
+                    origMousePos = mousePos;
+                    origCameraEulers = cameraEulers;
                 }
             }
             else if (button == MouseButton.Middle)
@@ -212,11 +212,8 @@ public class RecastDemo : IRecastDemoChannel
                     // Pan view
                     pan = true;
                     movedDuringPan = false;
-                    origMousePos[0] = mousePos[0];
-                    origMousePos[1] = mousePos[1];
-                    origCameraPos.x = cameraPos.x;
-                    origCameraPos.y = cameraPos.y;
-                    origCameraPos.z = cameraPos.z;
+                    origMousePos = mousePos;
+                    origCameraPos = cameraPos;
                 }
             }
         }
@@ -254,17 +251,17 @@ public class RecastDemo : IRecastDemoChannel
     private IWindow CreateWindow()
     {
         var monitor = Window.Platforms.First().GetMainMonitor();
-        var resolution = monitor.VideoMode.Resolution.Value;
+        _resolution = monitor.VideoMode.Resolution.Value;
 
         float aspect = 16.0f / 9.0f;
-        width = Math.Min(resolution.X, (int)(resolution.Y * aspect)) - 100;
-        height = resolution.Y - 100;
+        width = Math.Min(_resolution.X, (int)(_resolution.Y * aspect)) - 100;
+        height = _resolution.Y - 100;
         viewport = new int[] { 0, 0, width, height };
 
         var options = WindowOptions.Default;
         options.Title = title;
         options.Size = new Vector2D<int>(width, height);
-        options.Position = new Vector2D<int>((resolution.X - width) / 2, (resolution.Y - height) / 2);
+        options.Position = new Vector2D<int>((_resolution.X - width) / 2, (_resolution.Y - height) / 2);
         options.VSync = true;
         options.ShouldSwapAutomatically = false;
         options.PreferredDepthBufferBits = 24;
@@ -297,9 +294,7 @@ public class RecastDemo : IRecastDemoChannel
 
     private DemoInputGeomProvider LoadInputMesh(string filename)
     {
-        var bytes = Loader.ToBytes(filename);
-        DemoInputGeomProvider geom = DemoObjImporter.Load(bytes);
-
+        DemoInputGeomProvider geom = DemoInputGeomProvider.LoadFile(filename);
         _lastGeomFileName = filename;
         return geom;
     }
@@ -323,8 +318,8 @@ public class RecastDemo : IRecastDemoChannel
 
             if (null != mesh)
             {
-                _sample.Update(_sample.GetInputGeom(), Array.Empty<RecastBuilderResult>(), mesh);
-                toolset.SetEnabled(true);
+                _sample.Update(_sample.GetInputGeom(), ImmutableArray<RcBuilderResult>.Empty, mesh);
+                _toolsetView.SetEnabled(true);
             }
         }
         catch (Exception e)
@@ -370,41 +365,60 @@ public class RecastDemo : IRecastDemoChannel
 
         dd.Init(camr);
 
-        ImGuiFontConfig imGuiFontConfig = new(Path.Combine("resources\\fonts", "DroidSans.ttf"), 16, null);
+
+        var scale = (float)_resolution.X / 1920;
+        int fontSize = Math.Max(10, (int)(16 * scale));
+
+        // for windows : Microsoft Visual C++ Redistributable Package
+        // link - https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+        var imGuiFontConfig = new ImGuiFontConfig(Path.Combine("resources\\fonts", "DroidSans.ttf"), fontSize, null);
         _imgui = new ImGuiController(_gl, window, _input, imGuiFontConfig);
 
-        DemoInputGeomProvider geom = LoadInputMesh("nav_test.obj");
-        _sample = new Sample(geom, Array.Empty<RecastBuilderResult>(), null);
+        ImGui.GetStyle().ScaleAllSizes(scale);
+        //ImGui.GetIO().FontGlobalScale = 2.0f;
 
+        DemoInputGeomProvider geom = LoadInputMesh("nav_test.obj");
+        _sample = new DemoSample(geom, ImmutableArray<RcBuilderResult>.Empty, null);
+
+        _menuView = new RcMenuView();
         settingsView = new RcSettingsView(this);
         settingsView.SetSample(_sample);
 
-        toolset = new RcToolsetView(
-            new TestNavmeshTool(),
-            new OffMeshConnectionTool(),
-            new ConvexVolumeTool(),
-            new CrowdTool(),
-            new JumpLinkBuilderTool(),
-            new DynamicUpdateTool()
+        _toolsetView = new RcToolsetView(
+            new TestNavmeshSampleTool(),
+            new TileSampleTool(),
+            new ObstacleSampleTool(),
+            new OffMeshConnectionSampleTool(),
+            new ConvexVolumeSampleTool(),
+            new CrowdSampleTool(),
+            new CrowdAgentProfilingSampleTool(),
+            new JumpLinkBuilderSampleTool(),
+            new DynamicUpdateSampleTool()
         );
-        toolset.SetEnabled(true);
+        _toolsetView.SetEnabled(true);
         logView = new RcLogView();
 
-        _canvas = new RcCanvas(window, settingsView, toolset, logView);
+        _canvas = new RcCanvas(window, _menuView, settingsView, _toolsetView, logView);
 
         var vendor = _gl.GetStringS(GLEnum.Vendor);
         var version = _gl.GetStringS(GLEnum.Version);
-        var renderGl = _gl.GetStringS(GLEnum.Renderer);
+        var rendererGl = _gl.GetStringS(GLEnum.Renderer);
         var glslString = _gl.GetStringS(GLEnum.ShadingLanguageVersion);
-
+        var currentCulture = CultureInfo.CurrentCulture;
+        string bitness = Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit";
 
         var workingDirectory = Directory.GetCurrentDirectory();
-        Logger.Information($"working directory - {workingDirectory}");
-        Logger.Information($"ImGui.Net version - {ImGui.GetVersion()}");
-        Logger.Information(vendor);
-        Logger.Information(version);
-        Logger.Information(renderGl);
-        Logger.Information(glslString);
+        Logger.Information($"Working directory - {workingDirectory}");
+        Logger.Information($"ImGui.Net - version({ImGui.GetVersion()}) UI scale({scale}) fontSize({fontSize})");
+        Logger.Information($"Dotnet - {Environment.Version.ToString()} culture({currentCulture.Name})");
+        Logger.Information($"OS Version - {Environment.OSVersion} {bitness}");
+        Logger.Information($"{vendor} {rendererGl}");
+        Logger.Information($"gl version({version}) lang version({glslString})");
+    }
+
+    private float GetKeyValue(IKeyboard keyboard, Key primaryKey, Key secondaryKey)
+    {
+        return keyboard.IsKeyPressed(primaryKey) || keyboard.IsKeyPressed(secondaryKey) ? 1.0f : -1.0f;
     }
 
     private void UpdateKeyboard(float dt)
@@ -414,41 +428,41 @@ public class RecastDemo : IRecastDemoChannel
         // keyboard input
         foreach (var keyboard in _input.Keyboards)
         {
-            var tempMoveFront = keyboard.IsKeyPressed(Key.W) || keyboard.IsKeyPressed(Key.Up) ? 1.0f : -1f;
-            var tempMoveLeft = keyboard.IsKeyPressed(Key.A) || keyboard.IsKeyPressed(Key.Left) ? 1.0f : -1f;
-            var tempMoveBack = keyboard.IsKeyPressed(Key.S) || keyboard.IsKeyPressed(Key.Down) ? 1.0f : -1f;
-            var tempMoveRight = keyboard.IsKeyPressed(Key.D) || keyboard.IsKeyPressed(Key.Right) ? 1.0f : -1f;
-            var tempMoveUp = keyboard.IsKeyPressed(Key.Q) || keyboard.IsKeyPressed(Key.PageUp) ? 1.0f : -1f;
-            var tempMoveDown = keyboard.IsKeyPressed(Key.E) || keyboard.IsKeyPressed(Key.PageDown) ? 1.0f : -1f;
-            var tempMoveAccel = keyboard.IsKeyPressed(Key.ShiftLeft) || keyboard.IsKeyPressed(Key.ShiftRight) ? 1.0f : -1f;
-            var tempControl = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
+            var tempMoveFront = GetKeyValue(keyboard, Key.W, Key.Up);
+            var tempMoveLeft = GetKeyValue(keyboard, Key.A, Key.Left);
+            var tempMoveBack = GetKeyValue(keyboard, Key.S, Key.Down);
+            var tempMoveRight = GetKeyValue(keyboard, Key.D, Key.Right);
+            var tempMoveUp = GetKeyValue(keyboard, Key.Q, Key.PageUp);
+            var tempMoveDown = GetKeyValue(keyboard, Key.E, Key.PageDown);
+            var tempMoveAccel = GetKeyValue(keyboard, Key.ShiftLeft, Key.ShiftRight);
+            var tempControl = GetKeyValue(keyboard, Key.ControlLeft, Key.ControlRight);
 
-            _modState |= tempControl ? (int)KeyModState.Control : (int)KeyModState.None;
-            _modState |= 0 < tempMoveAccel ? (int)KeyModState.Shift : (int)KeyModState.None;
+            _modState |= 0 < tempControl ? KeyModState.Control : KeyModState.None;
+            _modState |= 0 < tempMoveAccel ? KeyModState.Shift : KeyModState.None;
 
             //Logger.Information($"{_modState}");
-            _moveFront = Clamp(_moveFront + tempMoveFront * dt * 4.0f, 0, 2.0f);
-            _moveLeft = Clamp(_moveLeft + tempMoveLeft * dt * 4.0f, 0, 2.0f);
-            _moveBack = Clamp(_moveBack + tempMoveBack * dt * 4.0f, 0, 2.0f);
-            _moveRight = Clamp(_moveRight + tempMoveRight * dt * 4.0f, 0, 2.0f);
-            _moveUp = Clamp(_moveUp + tempMoveUp * dt * 4.0f, 0, 2.0f);
-            _moveDown = Clamp(_moveDown + tempMoveDown * dt * 4.0f, 0, 2.0f);
-            _moveAccel = Clamp(_moveAccel + tempMoveAccel * dt * 4.0f, 0, 2.0f);
+            _moveFront = Math.Clamp(_moveFront + tempMoveFront * dt * 4.0f, 0, 2.0f);
+            _moveLeft = Math.Clamp(_moveLeft + tempMoveLeft * dt * 4.0f, 0, 2.0f);
+            _moveBack = Math.Clamp(_moveBack + tempMoveBack * dt * 4.0f, 0, 2.0f);
+            _moveRight = Math.Clamp(_moveRight + tempMoveRight * dt * 4.0f, 0, 2.0f);
+            _moveUp = Math.Clamp(_moveUp + tempMoveUp * dt * 4.0f, 0, 2.0f);
+            _moveDown = Math.Clamp(_moveDown + tempMoveDown * dt * 4.0f, 0, 2.0f);
+            _moveAccel = Math.Clamp(_moveAccel + tempMoveAccel * dt * 4.0f, 0, 2.0f);
         }
     }
 
     private void OnWindowUpdate(double dt)
     {
         /*
-          * try (MemoryStack stack = StackPush()) { int[] w = stack.MallocInt(1); int[] h =
-          * stack.MallocInt(1); GlfwGetWindowSize(win, w, h); width = w.x; height = h.x; }
-       */
+         * try (MemoryStack stack = StackPush()) { int[] w = stack.MallocInt(1); int[] h =
+         * stack.MallocInt(1); GlfwGetWindowSize(win, w, h); width = w.x; height = h.x; }
+         */
         if (_sample.GetInputGeom() != null)
         {
             var settings = _sample.GetSettings();
             RcVec3f bmin = _sample.GetInputGeom().GetMeshBoundsMin();
             RcVec3f bmax = _sample.GetInputGeom().GetMeshBoundsMax();
-            Recast.CalcGridSize(bmin, bmax, settings.cellSize, out var gw, out var gh);
+            RcRecast.CalcGridSize(bmin, bmax, settings.cellSize, out var gw, out var gh);
             settingsView.SetVoxels(gw, gh);
             settingsView.SetTiles(tileNavMeshBuilder.GetTiles(_sample.GetInputGeom(), settings.cellSize, settings.tileSize));
             settingsView.SetMaxTiles(tileNavMeshBuilder.GetMaxTiles(_sample.GetInputGeom(), settings.cellSize, settings.tileSize));
@@ -468,15 +482,15 @@ public class RecastDemo : IRecastDemoChannel
         double movey = (_moveBack - _moveFront) * keySpeed * dt + scrollZoom * 2.0f;
         scrollZoom = 0;
 
-        cameraPos.x += (float)(movex * modelviewMatrix[0]);
-        cameraPos.y += (float)(movex * modelviewMatrix[4]);
-        cameraPos.z += (float)(movex * modelviewMatrix[8]);
+        cameraPos.X += (float)(movex * modelviewMatrix[0]);
+        cameraPos.Y += (float)(movex * modelviewMatrix[4]);
+        cameraPos.Z += (float)(movex * modelviewMatrix[8]);
 
-        cameraPos.x += (float)(movey * modelviewMatrix[2]);
-        cameraPos.y += (float)(movey * modelviewMatrix[6]);
-        cameraPos.z += (float)(movey * modelviewMatrix[10]);
+        cameraPos.X += (float)(movey * modelviewMatrix[2]);
+        cameraPos.Y += (float)(movey * modelviewMatrix[6]);
+        cameraPos.Z += (float)(movey * modelviewMatrix[10]);
 
-        cameraPos.y += (float)((_moveUp - _moveDown) * keySpeed * dt);
+        cameraPos.Y += (float)((_moveUp - _moveDown) * keySpeed * dt);
 
         long time = RcFrequency.Ticks;
         prevFrameTime = time;
@@ -484,14 +498,18 @@ public class RecastDemo : IRecastDemoChannel
         // Update sample simulation.
         float SIM_RATE = 20;
         float DELTA_TIME = 1.0f / SIM_RATE;
-        timeAcc = Clamp((float)(timeAcc + dt), -1.0f, 1.0f);
+        timeAcc = Math.Clamp((float)(timeAcc + dt), -1.0f, 1.0f);
         int simIter = 0;
         while (timeAcc > DELTA_TIME)
         {
             timeAcc -= DELTA_TIME;
             if (simIter < 5 && _sample != null)
             {
-                toolset.HandleUpdate(DELTA_TIME);
+                var tool = _toolsetView.GetTool();
+                if (null != tool)
+                {
+                    tool.HandleUpdate(DELTA_TIME);
+                }
             }
 
             simIter++;
@@ -500,12 +518,12 @@ public class RecastDemo : IRecastDemoChannel
         if (processHitTest)
         {
             processHitTest = false;
-            
+
             RcVec3f rayStart = new RcVec3f();
             RcVec3f rayEnd = new RcVec3f();
 
-            GLU.GlhUnProjectf(mousePos[0], viewport[3] - 1 - mousePos[1], 0.0f, modelviewMatrix, projectionMatrix, viewport, ref rayStart);
-            GLU.GlhUnProjectf(mousePos[0], viewport[3] - 1 - mousePos[1], 1.0f, modelviewMatrix, projectionMatrix, viewport, ref rayEnd);
+            GLU.GlhUnProjectf(mousePos.X, viewport[3] - 1 - mousePos.Y, 0.0f, modelviewMatrix, projectionMatrix, viewport, ref rayStart);
+            GLU.GlhUnProjectf(mousePos.X, viewport[3] - 1 - mousePos.Y, 1.0f, modelviewMatrix, projectionMatrix, viewport, ref rayEnd);
 
             SendMessage(new RaycastEvent()
             {
@@ -516,64 +534,69 @@ public class RecastDemo : IRecastDemoChannel
 
         if (_sample.IsChanged())
         {
-            RcVec3f? bminN = null;
-            RcVec3f? bmaxN = null;
+            bool hasBound = false;
+            RcVec3f bminN = RcVec3f.Zero;
+            RcVec3f bmaxN = RcVec3f.Zero;
+
             if (_sample.GetInputGeom() != null)
             {
                 bminN = _sample.GetInputGeom().GetMeshBoundsMin();
                 bmaxN = _sample.GetInputGeom().GetMeshBoundsMax();
+                hasBound = true;
             }
             else if (_sample.GetNavMesh() != null)
             {
-                RcVec3f[] bounds = NavMeshUtils.GetNavMeshBounds(_sample.GetNavMesh());
-                bminN = bounds[0];
-                bmaxN = bounds[1];
+                _sample.GetNavMesh().ComputeBounds(out bminN, out bmaxN);
+                hasBound = true;
             }
             else if (0 < _sample.GetRecastResults().Count)
             {
-                foreach (RecastBuilderResult result in _sample.GetRecastResults())
+                foreach (RcBuilderResult result in _sample.GetRecastResults())
                 {
-                    if (result.GetSolidHeightfield() != null)
+                    if (result.CompactHeightfield != null)
                     {
-                        if (bminN == null)
+                        if (!hasBound)
                         {
-                            bminN = RcVec3f.Of(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
-                            bmaxN = RcVec3f.Of(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
+                            bminN = new RcVec3f(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
+                            bmaxN = new RcVec3f(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
                         }
 
-                        bminN = RcVec3f.Of(
-                            Math.Min(bminN.Value.x, result.GetSolidHeightfield().bmin.x),
-                            Math.Min(bminN.Value.y, result.GetSolidHeightfield().bmin.y),
-                            Math.Min(bminN.Value.z, result.GetSolidHeightfield().bmin.z)
+                        bminN = new RcVec3f(
+                            Math.Min(bminN.X, result.CompactHeightfield.bmin.X),
+                            Math.Min(bminN.Y, result.CompactHeightfield.bmin.Y),
+                            Math.Min(bminN.Z, result.CompactHeightfield.bmin.Z)
                         );
 
-                        bmaxN = RcVec3f.Of(
-                            Math.Max(bmaxN.Value.x, result.GetSolidHeightfield().bmax.x),
-                            Math.Max(bmaxN.Value.y, result.GetSolidHeightfield().bmax.y),
-                            Math.Max(bmaxN.Value.z, result.GetSolidHeightfield().bmax.z)
+                        bmaxN = new RcVec3f(
+                            Math.Max(bmaxN.X, result.CompactHeightfield.bmax.X),
+                            Math.Max(bmaxN.Y, result.CompactHeightfield.bmax.Y),
+                            Math.Max(bmaxN.Z, result.CompactHeightfield.bmax.Z)
                         );
+
+                        hasBound = true;
                     }
                 }
             }
 
-            if (bminN != null && bmaxN != null)
+            // Reset camera and fog to match the mesh bounds.
+            if (hasBound)
             {
-                RcVec3f bmin = bminN.Value;
-                RcVec3f bmax = bmaxN.Value;
+                RcVec3f bmin = bminN;
+                RcVec3f bmax = bmaxN;
 
-                camr = (float)(Math.Sqrt(
-                                   Sqr(bmax.x - bmin.x) + Sqr(bmax.y - bmin.y) + Sqr(bmax.z - bmin.z))
-                               / 2);
-                cameraPos.x = (bmax.x + bmin.x) / 2 + camr;
-                cameraPos.y = (bmax.y + bmin.y) / 2 + camr;
-                cameraPos.z = (bmax.z + bmin.z) / 2 + camr;
+                camr = (float)(Math.Sqrt(RcMath.Sqr(bmax.X - bmin.X) +
+                                         RcMath.Sqr(bmax.Y - bmin.Y) +
+                                         RcMath.Sqr(bmax.Z - bmin.Z)) / 2);
+                cameraPos.X = (bmax.X + bmin.X) / 2 + camr;
+                cameraPos.Y = (bmax.Y + bmin.Y) / 2 + camr;
+                cameraPos.Z = (bmax.Z + bmin.Z) / 2 + camr;
                 camr *= 5;
-                cameraEulers[0] = 45;
-                cameraEulers[1] = -45;
+                cameraEulers.X = 45;
+                cameraEulers.Y = -45;
             }
 
             _sample.SetChanged(false);
-            toolset.SetSample(_sample);
+            _toolsetView.SetSample(_sample);
         }
 
         if (_messages.TryDequeue(out var msg))
@@ -596,16 +619,16 @@ public class RecastDemo : IRecastDemoChannel
     {
         // Clear the screen
         dd.Clear();
-        projectionMatrix = dd.ProjectionMatrix(50f, (float)width / (float)height, 1.0f, camr);
-        modelviewMatrix = dd.ViewMatrix(cameraPos, cameraEulers);
+        dd.ProjectionMatrix(50f, (float)width / (float)height, 1.0f, camr).CopyTo(projectionMatrix);
+        dd.ViewMatrix(cameraPos, cameraEulers).CopyTo(modelviewMatrix);
 
         dd.Fog(camr * 0.1f, camr * 1.25f);
         renderer.Render(_sample, settingsView.GetDrawMode());
 
-        IRcTool tool = toolset.GetTool();
-        if (tool != null)
+        ISampleTool sampleTool = _toolsetView.GetTool();
+        if (sampleTool != null)
         {
-            tool.HandleRender(renderer);
+            sampleTool.HandleRender(renderer);
         }
 
         dd.Fog(false);
@@ -651,7 +674,7 @@ public class RecastDemo : IRecastDemoChannel
     {
         var geom = LoadInputMesh(args.FilePath);
 
-        _sample.Update(geom, Array.Empty<RecastBuilderResult>(), null);
+        _sample.Update(geom, ImmutableArray<RcBuilderResult>.Empty, null);
     }
 
     private void OnNavMeshBuildBegan(NavMeshBuildBeganEvent args)
@@ -662,92 +685,43 @@ public class RecastDemo : IRecastDemoChannel
             return;
         }
 
-        var settings = _sample.GetSettings();
-        var partitioning = settings.partitioning;
-        var cellSize = settings.cellSize;
-        var cellHeight = settings.cellHeight;
-        var agentHeight = settings.agentHeight;
-        var agentRadius = settings.agentRadius;
-        var agentMaxClimb = settings.agentMaxClimb;
-        var agentMaxSlope = settings.agentMaxSlope;
-        var regionMinSize = settings.minRegionSize;
-        var regionMergeSize = settings.mergedRegionSize;
-        var edgeMaxLen = settings.edgeMaxLen;
-        var edgeMaxError = settings.edgeMaxError;
-        var vertsPerPoly = settings.vertsPerPoly;
-        var detailSampleDist = settings.detailSampleDist;
-        var detailSampleMaxError = settings.detailSampleMaxError;
-        var filterLowHangingObstacles = settings.filterLowHangingObstacles;
-        var filterLedgeSpans = settings.filterLedgeSpans;
-        var filterWalkableLowHeightSpans = settings.filterWalkableLowHeightSpans;
-        var tileSize = settings.tileSize;
 
         long t = RcFrequency.Ticks;
 
         Logger.Information($"build");
 
         NavMeshBuildResult buildResult;
+
+        var geom = _sample.GetInputGeom();
+        var settings = _sample.GetSettings();
         if (settings.tiled)
         {
-            buildResult = tileNavMeshBuilder.Build(
-                _sample.GetInputGeom(),
-                partitioning,
-                cellSize,
-                cellHeight,
-                agentHeight,
-                agentRadius,
-                agentMaxClimb,
-                agentMaxSlope,
-                regionMinSize,
-                regionMergeSize,
-                edgeMaxLen,
-                edgeMaxError,
-                vertsPerPoly,
-                detailSampleDist,
-                detailSampleMaxError,
-                filterLowHangingObstacles,
-                filterLedgeSpans,
-                filterWalkableLowHeightSpans,
-                tileSize
-            );
+            buildResult = tileNavMeshBuilder.Build(geom, settings);
         }
         else
         {
-            buildResult = soloNavMeshBuilder.Build(
-                _sample.GetInputGeom(),
-                partitioning,
-                cellSize,
-                cellHeight,
-                agentHeight,
-                agentRadius,
-                agentMaxClimb,
-                agentMaxSlope,
-                regionMinSize,
-                regionMergeSize,
-                edgeMaxLen,
-                edgeMaxError,
-                vertsPerPoly,
-                detailSampleDist,
-                detailSampleMaxError,
-                filterLowHangingObstacles,
-                filterLedgeSpans,
-                filterWalkableLowHeightSpans
-            );
+            buildResult = soloNavMeshBuilder.Build(geom, settings);
+        }
+
+        if (!buildResult.Success)
+        {
+            Logger.Error("failed to build");
+            return;
         }
 
         _sample.Update(_sample.GetInputGeom(), buildResult.RecastBuilderResults, buildResult.NavMesh);
         _sample.SetChanged(false);
         settingsView.SetBuildTime((RcFrequency.Ticks - t) / TimeSpan.TicksPerMillisecond);
         //settingsUI.SetBuildTelemetry(buildResult.Item1.Select(x => x.GetTelemetry()).ToList());
-        toolset.SetSample(_sample);
+        _toolsetView.SetSample(_sample);
 
         Logger.Information($"build times");
         Logger.Information($"-----------------------------------------");
         var telemetries = buildResult.RecastBuilderResults
-            .Select(x => x.GetTelemetry())
+            .Select(x => x.Context)
             .SelectMany(x => x.ToList())
             .GroupBy(x => x.Key)
-            .ToDictionary(x => x.Key, x => x.Sum(y => y.Millis));
+            .ToImmutableSortedDictionary(x => x.Key, x => x.Sum(y => y.Millis));
 
         foreach (var (key, millis) in telemetries)
         {
@@ -793,7 +767,7 @@ public class RecastDemo : IRecastDemoChannel
 
         try
         {
-            using FileStream fs = new FileStream(args.FilePath, FileMode.Open, FileAccess.Read);
+            using FileStream fs = new FileStream(args.FilePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             LoadNavMesh(fs, args.FilePath);
         }
         catch (Exception e)
@@ -812,52 +786,54 @@ public class RecastDemo : IRecastDemoChannel
         if (_sample == null)
             return;
 
-        float? hit = null;
+        float hitTime = 0.0f;
+        bool hit = false;
         if (inputGeom != null)
         {
-            hit = inputGeom.RaycastMesh(rayStart, rayEnd);
+            hit = inputGeom.RaycastMesh(rayStart, rayEnd, out hitTime);
         }
 
-        if (!hit.HasValue && _sample.GetNavMesh() != null)
+        if (!hit && _sample.GetNavMesh() != null)
         {
-            hit = NavMeshRaycast.Raycast(_sample.GetNavMesh(), rayStart, rayEnd);
+            hit = DtNavMeshRaycast.Raycast(_sample.GetNavMesh(), rayStart, rayEnd, out hitTime);
         }
 
-        if (!hit.HasValue && _sample.GetRecastResults() != null)
+        if (!hit && _sample.GetRecastResults() != null)
         {
-            hit = PolyMeshRaycast.Raycast(_sample.GetRecastResults(), rayStart, rayEnd);
+            hit = RcPolyMeshRaycast.Raycast(_sample.GetRecastResults(), rayStart, rayEnd, out hitTime);
         }
 
-        RcVec3f rayDir = RcVec3f.Of(rayEnd.x - rayStart.x, rayEnd.y - rayStart.y, rayEnd.z - rayStart.z);
-        IRcTool rayTool = toolset.GetTool();
-        rayDir.Normalize();
-        if (rayTool != null)
+        RcVec3f rayDir = new RcVec3f(rayEnd.X - rayStart.X, rayEnd.Y - rayStart.Y, rayEnd.Z - rayStart.Z);
+        rayDir = RcVec3f.Normalize(rayDir);
+
+        ISampleTool raySampleTool = _toolsetView.GetTool();
+
+        if (raySampleTool != null)
         {
-            Logger.Information($"click ray - tool({rayTool.GetTool().GetName()}) rayStart({rayStart.x:0.#},{rayStart.y:0.#},{rayStart.z:0.#}) pos({rayDir.x:0.#},{rayDir.y:0.#},{rayDir.z:0.#}) shift({processHitTestShift})");
-            rayTool.HandleClickRay(rayStart, rayDir, processHitTestShift);
+            Logger.Information($"click ray - tool({raySampleTool.GetTool().GetName()}) rayStart({rayStart.X:0.#},{rayStart.Y:0.#},{rayStart.Z:0.#}) pos({rayDir.X:0.#},{rayDir.Y:0.#},{rayDir.Z:0.#}) shift({processHitTestShift})");
+            raySampleTool.HandleClickRay(rayStart, rayDir, processHitTestShift);
         }
 
-        if (hit.HasValue)
+        if (hit)
         {
-            float hitTime = hit.Value;
             if (0 != (_modState & KeyModState.Control))
             {
                 // Marker
                 markerPositionSet = true;
-                markerPosition.x = rayStart.x + (rayEnd.x - rayStart.x) * hitTime;
-                markerPosition.y = rayStart.y + (rayEnd.y - rayStart.y) * hitTime;
-                markerPosition.z = rayStart.z + (rayEnd.z - rayStart.z) * hitTime;
+                markerPosition.X = rayStart.X + (rayEnd.X - rayStart.X) * hitTime;
+                markerPosition.Y = rayStart.Y + (rayEnd.Y - rayStart.Y) * hitTime;
+                markerPosition.Z = rayStart.Z + (rayEnd.Z - rayStart.Z) * hitTime;
             }
             else
             {
                 RcVec3f pos = new RcVec3f();
-                pos.x = rayStart.x + (rayEnd.x - rayStart.x) * hitTime;
-                pos.y = rayStart.y + (rayEnd.y - rayStart.y) * hitTime;
-                pos.z = rayStart.z + (rayEnd.z - rayStart.z) * hitTime;
-                if (rayTool != null)
+                pos.X = rayStart.X + (rayEnd.X - rayStart.X) * hitTime;
+                pos.Y = rayStart.Y + (rayEnd.Y - rayStart.Y) * hitTime;
+                pos.Z = rayStart.Z + (rayEnd.Z - rayStart.Z) * hitTime;
+                if (raySampleTool != null)
                 {
-                    Logger.Information($"click - tool({rayTool.GetTool().GetName()}) rayStart({rayStart.x:0.#},{rayStart.y:0.#},{rayStart.z:0.#}) pos({pos.x:0.#},{pos.y:0.#},{pos.z:0.#}) shift({processHitTestShift})");
-                    rayTool.HandleClick(rayStart, pos, processHitTestShift);
+                    Logger.Information($"click - tool({raySampleTool.GetTool().GetName()}) rayStart({rayStart.X:0.#},{rayStart.Y:0.#},{rayStart.Z:0.#}) pos({pos.X:0.#},{pos.Y:0.#},{pos.Z:0.#}) shift({processHitTestShift})");
+                    raySampleTool.HandleClick(rayStart, pos, processHitTestShift);
                 }
             }
         }

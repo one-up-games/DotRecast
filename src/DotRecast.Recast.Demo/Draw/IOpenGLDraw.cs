@@ -1,5 +1,5 @@
-using DotRecast.Core;
-using Silk.NET.OpenGL;
+using System.Numerics;
+using DotRecast.Core.Numerics;
 
 namespace DotRecast.Recast.Demo.Draw;
 
@@ -17,7 +17,7 @@ public interface IOpenGLDraw
 
     void Vertex(float[] pos, int color);
     void Vertex(RcVec3f pos, int color);
-    
+
     void Vertex(RcVec3f pos, int color, RcVec2f uv);
 
     void Vertex(float x, float y, float z, int color, float u, float v);
@@ -28,9 +28,9 @@ public interface IOpenGLDraw
 
     void Texture(GLCheckerTexture g_tex, bool state);
 
-    void ProjectionMatrix(float[] projectionMatrix);
+    void ProjectionMatrix(ref RcMatrix4x4f projectionMatrix);
 
-    void ViewMatrix(float[] viewMatrix);
+    void ViewMatrix(ref RcMatrix4x4f viewMatrix);
 
     void Fog(float start, float end);
 }

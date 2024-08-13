@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -16,33 +17,33 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using DotRecast.Core;
+using DotRecast.Core.Numerics;
 
 using NUnit.Framework;
 
 namespace DotRecast.Detour.Test;
 
-[Parallelizable]
+
 public class FindDistanceToWallTest : AbstractDetourTest
 {
     private static readonly float[] DISTANCES_TO_WALL = { 0.597511f, 3.201085f, 0.603713f, 2.791475f, 2.815544f };
 
     private static readonly RcVec3f[] HIT_POSITION =
     {
-        RcVec3f.Of(23.177608f, 10.197294f, -45.742954f),
-        RcVec3f.Of(22.331268f, 10.197294f, -4.241272f),
-        RcVec3f.Of(18.108675f, 15.743596f, -73.236839f),
-        RcVec3f.Of(1.984785f, 10.197294f, -8.441269f),
-        RcVec3f.Of(-22.315216f, 4.997294f, -11.441269f),
+        new RcVec3f(23.177608f, 10.197294f, -45.742954f),
+        new RcVec3f(22.331268f, 10.197294f, -4.241272f),
+        new RcVec3f(18.108675f, 15.743596f, -73.236839f),
+        new RcVec3f(1.984785f, 10.197294f, -8.441269f),
+        new RcVec3f(-22.315216f, 4.997294f, -11.441269f),
     };
 
     private static readonly RcVec3f[] HIT_NORMAL =
     {
-        RcVec3f.Of(-0.955779f, 0.0f, -0.29408592f),
-        RcVec3f.Of(0.0f, 0.0f, 1.0f),
-        RcVec3f.Of(0.97014254f, 0.0f, 0.24253564f),
-        RcVec3f.Of(-1.0f, 0.0f, 0.0f),
-        RcVec3f.Of(1.0f, 0.0f, 0.0f),
+        new RcVec3f(-0.955779f, 0.0f, -0.29408592f),
+        new RcVec3f(0.0f, 0.0f, 1.0f),
+        new RcVec3f(0.97014254f, 0.0f, 0.24253564f),
+        new RcVec3f(-1.0f, 0.0f, 0.0f),
+        new RcVec3f(1.0f, 0.0f, 0.0f),
     };
 
     [Test]
@@ -56,13 +57,13 @@ public class FindDistanceToWallTest : AbstractDetourTest
                 out var hitDist, out var hitPos, out var hitNormal);
             Assert.That(hitDist, Is.EqualTo(DISTANCES_TO_WALL[i]).Within(0.001f));
 
-            Assert.That(hitPos.x, Is.EqualTo(HIT_POSITION[i].x).Within(0.001f));
-            Assert.That(hitPos.y, Is.EqualTo(HIT_POSITION[i].y).Within(0.001f));
-            Assert.That(hitPos.z, Is.EqualTo(HIT_POSITION[i].z).Within(0.001f));
+            Assert.That(hitPos.X, Is.EqualTo(HIT_POSITION[i].X).Within(0.001f));
+            Assert.That(hitPos.Y, Is.EqualTo(HIT_POSITION[i].Y).Within(0.001f));
+            Assert.That(hitPos.Z, Is.EqualTo(HIT_POSITION[i].Z).Within(0.001f));
 
-            Assert.That(hitNormal.x, Is.EqualTo(HIT_NORMAL[i].x).Within(0.001f));
-            Assert.That(hitNormal.y, Is.EqualTo(HIT_NORMAL[i].y).Within(0.001f));
-            Assert.That(hitNormal.z, Is.EqualTo(HIT_NORMAL[i].z).Within(0.001f));
+            Assert.That(hitNormal.X, Is.EqualTo(HIT_NORMAL[i].X).Within(0.001f));
+            Assert.That(hitNormal.Y, Is.EqualTo(HIT_NORMAL[i].Y).Within(0.001f));
+            Assert.That(hitNormal.Z, Is.EqualTo(HIT_NORMAL[i].Z).Within(0.001f));
         }
     }
 }

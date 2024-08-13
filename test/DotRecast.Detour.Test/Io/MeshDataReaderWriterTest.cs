@@ -1,5 +1,6 @@
 /*
 recast4j Copyright (c) 2015-2019 Piotr Piastucki piotr@jtilia.org
+DotRecast Copyright (c) 2023-2024 Choi Ikpil ikpil@naver.com
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
@@ -23,7 +24,7 @@ using NUnit.Framework;
 
 namespace DotRecast.Detour.Test.Io;
 
-[Parallelizable]
+
 public class MeshDataReaderWriterTest
 {
     private const int VERTS_PER_POLYGON = 6;
@@ -32,8 +33,7 @@ public class MeshDataReaderWriterTest
     [SetUp]
     public void SetUp()
     {
-        RecastTestMeshBuilder rcBuilder = new RecastTestMeshBuilder();
-        meshData = rcBuilder.GetMeshData();
+        meshData = TestMeshDataFactory.Create();
     }
 
     [Test]
@@ -63,15 +63,15 @@ public class MeshDataReaderWriterTest
     public void Test(bool cCompatibility, RcByteOrder order)
     {
         using var ms = new MemoryStream();
-        using var bwos = new BinaryWriter(ms);
+        using var bw = new BinaryWriter(ms);
 
         DtMeshDataWriter writer = new DtMeshDataWriter();
-        writer.Write(bwos, meshData, order, cCompatibility);
+        writer.Write(bw, meshData, order, cCompatibility);
         ms.Seek(0, SeekOrigin.Begin);
 
-        using var bris = new BinaryReader(ms);
+        using var br = new BinaryReader(ms);
         DtMeshDataReader reader = new DtMeshDataReader();
-        DtMeshData readData = reader.Read(bris, VERTS_PER_POLYGON);
+        DtMeshData readData = reader.Read(br, VERTS_PER_POLYGON);
 
         Assert.That(readData.header.vertCount, Is.EqualTo(meshData.header.vertCount));
         Assert.That(readData.header.polyCount, Is.EqualTo(meshData.header.polyCount));
@@ -131,7 +131,7 @@ public class MeshDataReaderWriterTest
             Assert.That(readData.offMeshCons[i].poly, Is.EqualTo(meshData.offMeshCons[i].poly));
             Assert.That(readData.offMeshCons[i].side, Is.EqualTo(meshData.offMeshCons[i].side));
             Assert.That(readData.offMeshCons[i].userId, Is.EqualTo(meshData.offMeshCons[i].userId));
-            for (int j = 0; j < 6; j++)
+            for (int j = 0; j < 2; j++)
             {
                 Assert.That(readData.offMeshCons[i].pos[j], Is.EqualTo(meshData.offMeshCons[i].pos[j]));
             }
