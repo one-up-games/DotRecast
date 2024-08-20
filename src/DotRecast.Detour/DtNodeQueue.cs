@@ -18,17 +18,15 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-using DotRecast.Core.Collections;
-
 namespace DotRecast.Detour
 {
     public class DtNodeQueue
     {
-        private readonly RcSortedQueue<DtNode> m_heap;
+        private readonly DtNodeSortedQueue m_heap;
 
         public DtNodeQueue()
         {
-            m_heap = new RcSortedQueue<DtNode>(DtNode.ComparisonNodeTotal);
+            m_heap = new DtNodeSortedQueue();
         }
 
         public int Count()
