@@ -7,16 +7,19 @@ namespace DotRecast.Detour
 {
     public class DtNodeSortedQueue
     {
-        private readonly SortedList<float, DtNode> _items;
+        private bool _dirty;
+        private readonly ArrayList _items;
+        private readonly Comparer<DtNode> _comparer;
 
         public DtNodeSortedQueue()
         {
-            _items = new SortedList<float, DtNode>(Comparer<float>.Create(Comparer));
+            _items = new ArrayList();
+            _comparer = Comparer<DtNode>.Create(Comparer);
         }
         
-        private int Comparer(float a, float b)
+        private int Comparer(DtNode a, DtNode b)
         {
-            return a.CompareTo(b) * -1;
+            return a.total.CompareTo(b.total) * -1;
         }
 
         public int Count()
@@ -32,11 +35,22 @@ namespace DotRecast.Detour
         public void Clear()
         {
             _items.Clear();
+            _dirty = false;
+        }
+        
+        private void Balance()
+        {
+            if (_dirty)
+            {
+                _items.Sort(_comparer); // reverse
+                _dirty = false;
+            }
         }
 
         public DtNode Peek()
         {
-            return _items.Values[_items.Count - 1];
+            Balance();
+            return (DtNode)_items[^1];
         }
 
         public DtNode Dequeue()
@@ -51,17 +65,17 @@ namespace DotRecast.Detour
             if (null == item)
                 return;
 
-            _items.Add(item.total, item);
+            _items.Add(item);
+            _dirty = true;
         }
 
         public void Remove(DtNode item)
         {
             if (null == item) return;
 
-            var values = _items.Values;
-            for (int i = 0; i < values.Count; i++)
+            for (int i = _items.Count - 1; i >= 0; i--)
             {
-                DtNode existingItem = values[i];
+                DtNode existingItem = (DtNode)_items[i];
                 if (item.Equals(existingItem))
                 {
                     _items.RemoveAt(i);
