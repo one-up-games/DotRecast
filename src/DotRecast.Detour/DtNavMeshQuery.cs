@@ -32,6 +32,9 @@ namespace DotRecast.Detour
     /// @ingroup detour
     public class DtNavMeshQuery
     {
+        const int BatchSize = 32;
+        private readonly DtPoly[] _polys = new DtPoly[BatchSize];
+        
         protected readonly DtNavMesh m_nav; //< Pointer to navmesh data.
         protected DtQueryData m_query; //< Sliced query state.
 
@@ -591,10 +594,6 @@ namespace DotRecast.Detour
 
             return DtStatus.DT_SUCCESS;
         }
-
-        
-        const int BatchSize = 32;
-        private readonly DtPoly[] _polys = new DtPoly[BatchSize];
 
         private void ClearBuffer()
         {
