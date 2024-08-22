@@ -20,6 +20,7 @@ freely, subject to the following restrictions:
 
 using System;
 using System.Collections.Generic;
+using System.Formats.Asn1;
 
 namespace DotRecast.Core.Collections
 {
@@ -31,7 +32,7 @@ namespace DotRecast.Core.Collections
 
         public RcSortedQueue(Comparison<T> comp)
         {
-            _comp = comp;
+            _comp = (n1, n2) => comp(n2, n1);
             _items = new List<T>();
         }
         
