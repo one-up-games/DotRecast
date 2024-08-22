@@ -597,7 +597,7 @@ namespace DotRecast.Detour
 
         private void ClearBuffer()
         {
-            for (var i = 0; i < _polys.Length; i++)
+            for (var i = 0; i < BatchSize; i++)
             {
                 _polys[i] = default;
             }
