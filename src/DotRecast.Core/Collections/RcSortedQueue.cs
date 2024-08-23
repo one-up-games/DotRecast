@@ -87,16 +87,19 @@ namespace DotRecast.Core.Collections
         {
             if (null == item)
                 return false;
-
-            //int idx = _items.BinarySearch(item, _comparer); // don't use this! Because reference types can be reused (modified) externally.
-            int idx = _items.FindLastIndex(x => item.Equals(x));
-            if (0 > idx)
-                return false;
-
-            _items.RemoveAt(idx);
-            return true;
+            
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                T existingItem = _items[i];
+                if (item.Equals(existingItem))
+                {
+                    _items.RemoveAt(i);
+                    return true;
+                }
+            }
+            
+            return false;
         }
-
 
         public List<T> ToList()
         {
