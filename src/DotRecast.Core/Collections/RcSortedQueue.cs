@@ -25,15 +25,16 @@ namespace DotRecast.Core.Collections
 {
     public class RcSortedQueue<T>
     {
+        private readonly Comparison<T> _comp;
         private bool _dirty;
         private readonly List<T> _items;
-        private readonly Comparer<T> _comparer;
 
         public RcSortedQueue(Comparison<T> comp)
         {
+            _comp = (n1, n2) => comp(n2, n1);
             _items = new List<T>();
-            _comparer = Comparer<T>.Create((x, y) => comp.Invoke(x, y) * -1);
         }
+        
 
         public int Count()
         {
@@ -55,7 +56,7 @@ namespace DotRecast.Core.Collections
         {
             if (_dirty)
             {
-                _items.Sort(_comparer); // reverse
+                _items.Sort(_comp); // reverse
                 _dirty = false;
             }
         }
@@ -86,16 +87,19 @@ namespace DotRecast.Core.Collections
         {
             if (null == item)
                 return false;
-
-            //int idx = _items.BinarySearch(item, _comparer); // don't use this! Because reference types can be reused externally.
-            int idx = _items.FindLastIndex(x => item.Equals(x));
-            if (0 > idx)
-                return false;
-
-            _items.RemoveAt(idx);
-            return true;
+            
+            for (int i = _items.Count - 1; i >= 0; i--)
+            {
+                T existingItem = _items[i];
+                if (item.Equals(existingItem))
+                {
+                    _items.RemoveAt(i);
+                    return true;
+                }
+            }
+            
+            return false;
         }
-
 
         public List<T> ToList()
         {

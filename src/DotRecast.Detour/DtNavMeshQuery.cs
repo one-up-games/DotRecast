@@ -32,6 +32,9 @@ namespace DotRecast.Detour
     /// @ingroup detour
     public class DtNavMeshQuery
     {
+        const int BatchSize = 32;
+        private readonly DtPoly[] _polys = new DtPoly[BatchSize];
+        
         protected readonly DtNavMesh m_nav; //< Pointer to navmesh data.
         protected DtQueryData m_query; //< Sliced query state.
 
@@ -592,12 +595,21 @@ namespace DotRecast.Detour
             return DtStatus.DT_SUCCESS;
         }
 
+        private void ClearBuffer()
+        {
+            for (var i = 0; i < BatchSize; i++)
+            {
+                _polys[i] = default;
+            }
+        }
+        
         /// Queries polygons within a tile.
         protected void QueryPolygonsInTile(DtMeshTile tile, RcVec3f qmin, RcVec3f qmax, IDtQueryFilter filter, IDtPolyQuery query)
         {
-            const int batchSize = 32;
-            Span<long> polyRefs = stackalloc long[batchSize];
-            DtPoly[] polys = new DtPoly[batchSize];
+            Span<long> polyRefs = stackalloc long[BatchSize];
+            ClearBuffer();
+            var polys = _polys;
+            
             int n = 0;
 
             if (tile.data.bvTree != null)
@@ -642,9 +654,9 @@ namespace DotRecast.Detour
                             polyRefs[n] = refs;
                             polys[n] = tile.data.polys[node.i];
 
-                            if (n == batchSize - 1)
+                            if (n == BatchSize - 1)
                             {
-                                query.Process(tile, polys, polyRefs, batchSize);
+                                query.Process(tile, polys, polyRefs, BatchSize);
                                 n = 0;
                             }
                             else
@@ -702,9 +714,9 @@ namespace DotRecast.Detour
                         polyRefs[n] = refs;
                         polys[n] = p;
 
-                        if (n == batchSize - 1)
+                        if (n == BatchSize - 1)
                         {
-                            query.Process(tile, polys, polyRefs, batchSize);
+                            query.Process(tile, polys, polyRefs, BatchSize);
                             n = 0;
                         }
                         else

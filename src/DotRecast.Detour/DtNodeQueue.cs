@@ -18,6 +18,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+using System;
 using DotRecast.Core.Collections;
 
 namespace DotRecast.Detour
@@ -25,7 +26,7 @@ namespace DotRecast.Detour
     public class DtNodeQueue
     {
         private readonly RcSortedQueue<DtNode> m_heap;
-
+        
         public DtNodeQueue()
         {
             m_heap = new RcSortedQueue<DtNode>(DtNode.ComparisonNodeTotal);
