@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace DotRecast.Core.Numerics
@@ -83,19 +84,19 @@ namespace DotRecast.Core.Numerics
             );
         }
 
-#if NET8_0_OR_GREATER
+
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator RcVec2f(System.Numerics.Vector2 v)
+        public static unsafe implicit operator Vector2(RcVec2f vec2f)
         {
-            return Unsafe.BitCast<System.Numerics.Vector2, RcVec2f>(v);
+            return *(Vector2*)&vec2f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator System.Numerics.Vector2(RcVec2f v)
+        public static unsafe implicit operator RcVec2f(Vector2 vec2)
         {
-            return Unsafe.BitCast<RcVec2f, System.Numerics.Vector2>(v);
+            return *(RcVec2f*)&vec2;
         }
-#endif
 
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

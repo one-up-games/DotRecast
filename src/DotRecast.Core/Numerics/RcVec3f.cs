@@ -18,6 +18,7 @@ freely, subject to the following restrictions:
 */
 
 using System;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace DotRecast.Core.Numerics
@@ -257,18 +258,16 @@ namespace DotRecast.Core.Numerics
             );
         }
 
-#if NET8_0_OR_GREATER
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator RcVec3f(System.Numerics.Vector3 v)
+        public static unsafe implicit operator Vector3(RcVec3f vec3f)
         {
-            return Unsafe.BitCast<System.Numerics.Vector3, RcVec3f>(v);
+            return *(Vector3*)&vec3f;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator System.Numerics.Vector3(RcVec3f v)
+        public static unsafe implicit operator RcVec3f(Vector3 vec3)
         {
-            return Unsafe.BitCast<RcVec3f, System.Numerics.Vector3>(v);
+            return *(RcVec3f*)&vec3;
         }
-#endif
     }
 }
