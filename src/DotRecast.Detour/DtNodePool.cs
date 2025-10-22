@@ -38,8 +38,17 @@ namespace DotRecast.Detour
         public DtNodePool()
         {
             m_map = new Dictionary<long, List<DtNode>>(MapInitSize);
-            m_nodes = new List<DtNode>(MapInitSize * ListInitSize);
+            m_nodes = new List<DtNode>(MapInitSize);
+            for (int i = 0; i < MapInitSize; i++)
+            {
+                m_nodes.Add(new DtNode(i));
+            }
+
             _listPool = new Queue<List<DtNode>>(MapInitSize);
+            for (int i = 0; i < MapInitSize; i++)
+            {
+                _listPool.Enqueue(new List<DtNode>(ListInitSize));
+            }
         }
 
         public void Clear()
