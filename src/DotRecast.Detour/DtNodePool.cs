@@ -25,19 +25,30 @@ namespace DotRecast.Detour
 {
     public class DtNodePool
     {
+        private const int MapInitSize = 200;
+        private const int ListInitSize = 200;
+
         private readonly Dictionary<long, List<DtNode>> m_map;
 
         private int m_nodeCount;
         private readonly List<DtNode> m_nodes;
 
+        private readonly Queue<List<DtNode>> _listPool;
+
         public DtNodePool()
         {
-            m_map = new Dictionary<long, List<DtNode>>();
-            m_nodes = new List<DtNode>();
+            m_map = new Dictionary<long, List<DtNode>>(MapInitSize);
+            m_nodes = new List<DtNode>(ListInitSize); // MapInitSize * ListInitSize
+            _listPool = new Queue<List<DtNode>>(MapInitSize);
         }
 
         public void Clear()
         {
+            foreach (var (_, list) in m_map)
+            {
+                list.Clear();
+                _listPool.Enqueue(list);
+            }
             m_map.Clear();
             m_nodeCount = 0;
         }
@@ -84,7 +95,11 @@ namespace DotRecast.Detour
             }
             else
             {
-                nodes = new List<DtNode>();
+                if (!_listPool.TryDequeue(out nodes))
+                {
+                    nodes = new List<DtNode>(ListInitSize);
+                }
+
                 m_map.Add(id, nodes);
             }
 
