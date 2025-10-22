@@ -25,8 +25,8 @@ namespace DotRecast.Detour
 {
     public class DtNodePool
     {
-        private const int MapInitSize = 200;
-        private const int ListInitSize = 200;
+        private const int MapInitSize = 2000;
+        private const int ListInitSize = DtDetour.DT_MAX_STATES_PER_NODE;
 
         private readonly Dictionary<long, List<DtNode>> m_map;
 
@@ -38,7 +38,7 @@ namespace DotRecast.Detour
         public DtNodePool()
         {
             m_map = new Dictionary<long, List<DtNode>>(MapInitSize);
-            m_nodes = new List<DtNode>(ListInitSize); // MapInitSize * ListInitSize
+            m_nodes = new List<DtNode>(MapInitSize * ListInitSize);
             _listPool = new Queue<List<DtNode>>(MapInitSize);
         }
 
