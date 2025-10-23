@@ -25,8 +25,8 @@ namespace DotRecast.Detour
 {
     public class DtNodePool
     {
-        private const int MapInitSize = 2000;
-        private const int ListInitSize = DtDetour.DT_MAX_STATES_PER_NODE;
+        private const int NodeInitSize = 1000;
+        private const int NodeStateInitSize = DtDetour.DT_MAX_STATES_PER_NODE;
 
         private readonly Dictionary<long, List<DtNode>> m_map;
 
@@ -35,19 +35,29 @@ namespace DotRecast.Detour
 
         private readonly Queue<List<DtNode>> _listPool;
 
-        public DtNodePool()
+        private readonly int _nodeInitSize;
+        private readonly int _nodeStateInitSize;
+
+        public DtNodePool() : this(NodeInitSize, NodeStateInitSize)
         {
-            m_map = new Dictionary<long, List<DtNode>>(MapInitSize);
-            m_nodes = new List<DtNode>(MapInitSize);
-            for (int i = 0; i < MapInitSize; i++)
+        }
+
+        public DtNodePool(int nodeInitCount, int nodeStateInitCount)
+        {
+            _nodeInitSize = nodeInitCount;
+            _nodeStateInitSize = nodeStateInitCount;
+
+            m_map = new Dictionary<long, List<DtNode>>(_nodeInitSize);
+            m_nodes = new List<DtNode>(_nodeInitSize);
+            for (int i = 0; i < _nodeInitSize; i++)
             {
                 m_nodes.Add(new DtNode(i));
             }
 
-            _listPool = new Queue<List<DtNode>>(MapInitSize);
-            for (int i = 0; i < MapInitSize; i++)
+            _listPool = new Queue<List<DtNode>>(_nodeInitSize);
+            for (int i = 0; i < _nodeInitSize; i++)
             {
-                _listPool.Enqueue(new List<DtNode>(ListInitSize));
+                _listPool.Enqueue(new List<DtNode>(_nodeStateInitSize));
             }
         }
 
@@ -106,7 +116,7 @@ namespace DotRecast.Detour
             {
                 if (!_listPool.TryDequeue(out nodes))
                 {
-                    nodes = new List<DtNode>(ListInitSize);
+                    nodes = new List<DtNode>(_nodeStateInitSize);
                 }
 
                 m_map.Add(id, nodes);
