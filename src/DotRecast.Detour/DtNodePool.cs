@@ -25,19 +25,49 @@ namespace DotRecast.Detour
 {
     public class DtNodePool
     {
+        private const int NodeInitSize = 1000;
+        private const int NodeStateInitSize = DtDetour.DT_MAX_STATES_PER_NODE;
+
         private readonly Dictionary<long, List<DtNode>> m_map;
 
         private int m_nodeCount;
         private readonly List<DtNode> m_nodes;
 
-        public DtNodePool()
+        private readonly Queue<List<DtNode>> _listPool;
+
+        private readonly int _nodeInitSize;
+        private readonly int _nodeStateInitSize;
+
+        public DtNodePool() : this(NodeInitSize, NodeStateInitSize)
         {
-            m_map = new Dictionary<long, List<DtNode>>();
-            m_nodes = new List<DtNode>();
+        }
+
+        public DtNodePool(int nodeInitCount, int nodeStateInitCount)
+        {
+            _nodeInitSize = nodeInitCount;
+            _nodeStateInitSize = nodeStateInitCount;
+
+            m_map = new Dictionary<long, List<DtNode>>(_nodeInitSize);
+            m_nodes = new List<DtNode>(_nodeInitSize);
+            for (int i = 0; i < _nodeInitSize; i++)
+            {
+                m_nodes.Add(new DtNode(i));
+            }
+
+            _listPool = new Queue<List<DtNode>>(_nodeInitSize);
+            for (int i = 0; i < _nodeInitSize; i++)
+            {
+                _listPool.Enqueue(new List<DtNode>(_nodeStateInitSize));
+            }
         }
 
         public void Clear()
         {
+            foreach (var (_, list) in m_map)
+            {
+                list.Clear();
+                _listPool.Enqueue(list);
+            }
             m_map.Clear();
             m_nodeCount = 0;
         }
@@ -84,7 +114,11 @@ namespace DotRecast.Detour
             }
             else
             {
-                nodes = new List<DtNode>();
+                if (!_listPool.TryDequeue(out nodes))
+                {
+                    nodes = new List<DtNode>(_nodeStateInitSize);
+                }
+
                 m_map.Add(id, nodes);
             }
 
