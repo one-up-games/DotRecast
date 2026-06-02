@@ -45,6 +45,7 @@ using DotRecast.Recast.Demo.Messages;
 using DotRecast.Recast.Toolset.Geom;
 using DotRecast.Recast.Demo.Tools;
 using DotRecast.Recast.Demo.UI;
+using DotRecast.Recast.Geom;
 using MouseButton = Silk.NET.Input.MouseButton;
 using Window = Silk.NET.Windowing.Window;
 
@@ -294,9 +295,9 @@ public class RecastDemo : IRecastDemoChannel
         return window;
     }
 
-    private DemoInputGeomProvider LoadInputMesh(string filename)
+    private RcSampleInputGeomProvider LoadInputMesh(string filename)
     {
-        DemoInputGeomProvider geom = DemoInputGeomProvider.LoadFile(filename);
+        RcSampleInputGeomProvider geom = RcSampleInputGeomProvider.LoadFile(filename);
         _lastGeomFileName = filename;
         return geom;
     }
@@ -374,13 +375,13 @@ public class RecastDemo : IRecastDemoChannel
 
         // for windows : Microsoft Visual C++ Redistributable Package
         // link - https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
-        var imGuiFontConfig = new ImGuiFontConfig(Path.Combine("resources\\fonts", "DroidSans.ttf"), fontSize, null);
+        var imGuiFontConfig = new ImGuiFontConfig(Path.Combine("resources/fonts", "DroidSans.ttf"), fontSize, null);
         _imgui = new ImGuiController(_gl, window, _input, imGuiFontConfig);
 
         //ImGui.GetStyle().ScaleAllSizes(scale);
         //ImGui.GetIO().FontGlobalScale = 2.0f;
 
-        DemoInputGeomProvider geom = LoadInputMesh("nav_test.obj");
+        RcSampleInputGeomProvider geom = LoadInputMesh("nav_test.obj");
         _sample = new DemoSample(geom, ImmutableArray<RcBuilderResult>.Empty, null);
 
         _menuView = new RcMenuView();
@@ -796,7 +797,7 @@ public class RecastDemo : IRecastDemoChannel
         var rayEnd = args.End;
 
         // Hit test mesh.
-        DemoInputGeomProvider inputGeom = _sample.GetInputGeom();
+        RcSampleInputGeomProvider inputGeom = _sample.GetInputGeom();
         if (_sample == null)
             return;
 

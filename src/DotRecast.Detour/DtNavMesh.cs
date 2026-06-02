@@ -47,7 +47,7 @@ namespace DotRecast.Detour
         /** The maximum number of vertices per navigation polygon. */
         private int m_maxVertPerPoly;
 
-        public DtStatus Init(DtNavMeshParams param, int maxVertsPerPoly)
+        public DtStatus Init(in DtNavMeshParams param, int maxVertsPerPoly)
         {
             m_params = param;
             m_orig = param.orig;
@@ -275,7 +275,7 @@ namespace DotRecast.Detour
                 while (nodeIndex < end)
                 {
                     DtBVNode node = tile.data.bvTree[nodeIndex];
-                    bool overlap = DtUtils.OverlapQuantBounds(ref bmin, ref bmax, ref node.bmin, ref node.bmax);
+                    bool overlap = DtUtils.OverlapQuantBounds(bmin, bmax, node.bmin, node.bmax);
                     bool isLeafNode = node.i >= 0;
 
                     if (isLeafNode && overlap)
@@ -1026,12 +1026,12 @@ namespace DotRecast.Detour
         }
 
         /**
-     * Returns closest point on polygon.
-     *
-     * @param ref
-     * @param pos
-     * @return
-     */
+         * Returns closest point on polygon.
+         *
+         * @param ref
+         * @param pos
+         * @return
+         */
         RcVec3f ClosestPointOnDetailEdges(DtMeshTile tile, DtPoly poly, RcVec3f pos, bool onlyBoundary)
         {
             const int ANY_BOUNDARY_EDGE = (DtDetailTriEdgeFlags.DT_DETAIL_EDGE_BOUNDARY << 0) |

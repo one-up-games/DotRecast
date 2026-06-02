@@ -946,6 +946,10 @@ namespace DotRecast.Recast
                         pt.X = samples[s + 0] * sampleDist + GetJitterX(i) * cs * 0.1f;
                         pt.Y = samples[s + 1] * chf.ch;
                         pt.Z = samples[s + 2] * sampleDist + GetJitterY(i) * cs * 0.1f;
+                        
+                        if (tris.Count == 0) 
+                            continue;
+                        
                         float d = DistToTriMesh(pt, verts, nverts, tris, tris.Count / 4);
                         if (d < 0)
                         {
@@ -1133,7 +1137,7 @@ namespace DotRecast.Recast
                 for (int i = 0; i < 4; ++i)
                 {
                     int dir = dirs[i];
-                    if (GetCon(ref cs, dir) == RC_NOT_CONNECTED)
+                    if (GetCon(cs, dir) == RC_NOT_CONNECTED)
                     {
                         continue;
                     }
@@ -1157,7 +1161,7 @@ namespace DotRecast.Recast
 
                     array.Add(newX);
                     array.Add(newY);
-                    array.Add(chf.cells[(newX + bs) + (newY + bs) * chf.width].index + GetCon(ref cs, dir));
+                    array.Add(chf.cells[(newX + bs) + (newY + bs) * chf.width].index + GetCon(cs, dir));
                 }
 
                 tmp = dirs[3];
@@ -1225,11 +1229,11 @@ namespace DotRecast.Recast
                                 bool border = false;
                                 for (int dir = 0; dir < 4; ++dir)
                                 {
-                                    if (GetCon(ref s, dir) != RC_NOT_CONNECTED)
+                                    if (GetCon(s, dir) != RC_NOT_CONNECTED)
                                     {
                                         int ax = x + GetDirOffsetX(dir);
                                         int ay = y + GetDirOffsetY(dir);
-                                        int ai = chf.cells[ax + ay * chf.width].index + GetCon(ref s, dir);
+                                        int ai = chf.cells[ax + ay * chf.width].index + GetCon(s, dir);
                                         ref RcCompactSpan @as = ref chf.spans[ai];
                                         if (@as.reg != region)
                                         {
@@ -1280,7 +1284,7 @@ namespace DotRecast.Recast
                 ref RcCompactSpan cs = ref chf.spans[ci];
                 for (int dir = 0; dir < 4; ++dir)
                 {
-                    if (GetCon(ref cs, dir) == RC_NOT_CONNECTED)
+                    if (GetCon(cs, dir) == RC_NOT_CONNECTED)
                     {
                         continue;
                     }
@@ -1300,7 +1304,7 @@ namespace DotRecast.Recast
                         continue;
                     }
 
-                    int ai = chf.cells[ax + ay * chf.width].index + GetCon(ref cs, dir);
+                    int ai = chf.cells[ax + ay * chf.width].index + GetCon(cs, dir);
                     ref RcCompactSpan @as = ref chf.spans[ai];
 
                     hp.data[hx + hy * hp.width] = @as.y;

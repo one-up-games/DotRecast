@@ -97,8 +97,6 @@ namespace DotRecast.Recast
         /// @see rcPolyMesh::polys
         public const int RC_MESH_NULL_IDX = 0xffff;
 
-        public const int RC_LOG_WARNING = 1;
-
         private static readonly int[] DirOffsetX = { -1, 0, 1, 0, };
         private static readonly int[] DirOffsetY = { 0, 1, 0, -1 };
         private static readonly int[] DirForOffset = { 3, 0, -1, 2, 1 };
@@ -118,7 +116,7 @@ namespace DotRecast.Recast
         /// @param[in]		span		The span to check.
         /// @param[in]		direction	The direction to check. [Limits: 0 <= value < 4]
         /// @return The neighbor connection data for the specified direction, or #RC_NOT_CONNECTED if there is no connection.
-        public static int GetCon(ref RcCompactSpan s, int dir)
+        public static int GetCon(in RcCompactSpan s, int dir)
         {
             int shift = dir * 6;
             return (s.con >> shift) & 0x3f;

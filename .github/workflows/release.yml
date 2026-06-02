@@ -2,7 +2,7 @@
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+\.[0-9]+\.[0-9]+'
 
 jobs:
   build:
@@ -10,14 +10,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # Get all history to allow automatic versioning using MinVer
 
       - name: Setup Dotnet
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '10.x'
 
       - name: restore dependencies
         run: dotnet restore
@@ -26,7 +26,7 @@ jobs:
         run: dotnet build -c Release --no-restore
 
       - name: publish
-        run: dotnet publish src/DotRecast.Recast.Demo -c Release --framework net9.0 --no-restore --no-self-contained --output working-temp
+        run: dotnet publish src/DotRecast.Recast.Demo -c Release --framework net10.0 --no-restore --no-self-contained --output working-temp
 
       - name: version
         id: version
@@ -38,8 +38,8 @@ jobs:
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "major=${major}" >> $GITHUB_OUTPUT
 
+
       - name: Zip
-        working-directory: ${{ env.working-directory }}
         run: |
           cp -rfv resources working-temp
           cd working-temp
@@ -55,7 +55,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: zip Upload
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             DotRecast.Recast.Demo-${{ steps.version.outputs.version}}.zip
