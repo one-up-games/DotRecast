@@ -30,6 +30,8 @@ namespace DotRecast.Detour
             _center = center;
             _nearestDistanceSqr = float.MaxValue;
             _nearestPoint = center;
+            _nearestRef = 0;
+            _overPoly = false;
         }
 
         public void Process(DtMeshTile tile, ReadOnlySpan<int> polys, ReadOnlySpan<long> refs, int count)
