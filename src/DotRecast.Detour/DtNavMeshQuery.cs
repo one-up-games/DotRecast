@@ -1769,6 +1769,25 @@ namespace DotRecast.Detour
                         toType = DtPolyTypes.DT_POLYTYPE_GROUND;
                     }
 
+                    // [FIX] Two off-mesh connections sharing an exact endpoint (e.g. a two-stage parkour
+                    // climb whose first link's end == second link's start) collapse: the second link's start
+                    // produces no funnel turn, so it never gets a straight-path vertex and the link silently
+                    // becomes a walk segment. If the previously emitted vertex sits on this off-mesh link's
+                    // start but isn't flagged as a connection, promote it (AppendVertex merges onto it) so the
+                    // link is preserved. Only fires for the coincident case; normal links are unaffected.
+                    if (i + 1 < pathSize && toType == DtPolyTypes.DT_POLYTYPE_OFFMESH_CONNECTION
+                        && straightPathCount > 0
+                        && RcVec.Equal(straightPath[straightPathCount - 1].pos, left)
+                        && (straightPath[straightPathCount - 1].flags & DtStraightPathFlags.DT_STRAIGHTPATH_OFFMESH_CONNECTION) == 0)
+                    {
+                        stat = AppendVertex(left, DtStraightPathFlags.DT_STRAIGHTPATH_OFFMESH_CONNECTION, path[i + 1],
+                            straightPath, ref straightPathCount, maxStraightPath);
+                        if (!stat.InProgress())
+                        {
+                            return stat;
+                        }
+                    }
+
                     // Right vertex.
                     if (DtUtils.TriArea2D(portalApex, portalRight, right) <= 0.0f)
                     {
